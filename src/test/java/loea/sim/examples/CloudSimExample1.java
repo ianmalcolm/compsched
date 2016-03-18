@@ -1,4 +1,4 @@
-package example;
+package loea.sim.examples;
 
 /*
  * Title:        CloudSim Toolkit
