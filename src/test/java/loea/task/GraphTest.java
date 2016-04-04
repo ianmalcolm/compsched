@@ -1,4 +1,4 @@
-package loea.graph;
+package loea.task;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -28,14 +28,12 @@ public class GraphTest {
 				DefaultEdge.class);
 
 		ArrayList<SubTask> l = new ArrayList<SubTask>();
-
+		Random r = new Random();
 		for (int i = 0; i < numSubTask; i++) {
-			SubTask st = new SubTask();
+			SubTask st = new SubTask(i, r.nextLong());
 			l.add(st);
 			g.addVertex(st);
 		}
-
-		Random r = new Random();
 
 		// create a DAG with a lower triangular matrix
 		for (int i = 0; i < numSubTask; i++) {
@@ -70,7 +68,8 @@ public class GraphTest {
 		GraphTest gt = new GraphTest();
 		DirectedAcyclicGraph<SubTask, DefaultEdge> g = gt.RandomDAG();
 		// create a visualization using JGraph, via the adapter
-		JGraph jgraph = new JGraph(new JGraphModelAdapter<SubTask, DefaultEdge>(g));
+		JGraph jgraph = new JGraph(
+				new JGraphModelAdapter<SubTask, DefaultEdge>(g));
 
 		// This is an empty content area in the frame
 		frame.getContentPane().add(jgraph);
