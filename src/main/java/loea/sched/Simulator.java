@@ -11,14 +11,11 @@ import loea.sched.task.Task;
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.CloudletSchedulerTimeShared;
 import org.cloudbus.cloudsim.Datacenter;
-import org.cloudbus.cloudsim.DatacenterBroker;
 import org.cloudbus.cloudsim.DatacenterCharacteristics;
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.Pe;
 import org.cloudbus.cloudsim.Storage;
-import org.cloudbus.cloudsim.UtilizationModel;
-import org.cloudbus.cloudsim.UtilizationModelFull;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.VmAllocationPolicySimple;
 import org.cloudbus.cloudsim.VmSchedulerTimeShared;
@@ -90,7 +87,8 @@ public class Simulator {
 			// Fifth step: Create an empty task list
 			taskList = new ArrayList<Task>();
 
-			Task t = Task.randomTask(16, 0.5, broker.getId());
+			Task t = new Task(0,0,0,"tasks/example1.txt");
+			t.setUserId(brokerId);
 
 			// add the task to the list
 			taskList.add(t);

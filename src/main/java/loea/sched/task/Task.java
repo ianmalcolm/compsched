@@ -1,8 +1,14 @@
 package loea.sched.task;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -11,6 +17,13 @@ import org.cloudbus.cloudsim.UtilizationModel;
 import org.cloudbus.cloudsim.UtilizationModelFull;
 import org.jgrapht.experimental.dag.DirectedAcyclicGraph;
 import org.jgrapht.experimental.dag.DirectedAcyclicGraph.CycleFoundException;
+import org.jgrapht.ext.ComponentAttributeProvider;
+import org.jgrapht.ext.DOTExporter;
+import org.jgrapht.ext.DOTImporter;
+import org.jgrapht.ext.EdgeProvider;
+import org.jgrapht.ext.ImportException;
+import org.jgrapht.ext.VertexNameProvider;
+import org.jgrapht.ext.VertexProvider;
 import org.jgrapht.graph.DefaultEdge;
 
 public class Task implements Iterable<Cloudlet> {
@@ -18,7 +31,9 @@ public class Task implements Iterable<Cloudlet> {
 	private DirectedAcyclicGraph<Cloudlet, DefaultEdge> graph = null;
 
 	private int timeArriving = 0;
+
 	private int priority = 0; // -20~19, -20 is the highest priority
+
 	private int id = 0;
 
 	public static final long DEFAULTFILESIZE = 100;
@@ -34,6 +49,56 @@ public class Task implements Iterable<Cloudlet> {
 	 */
 	public Task() {
 		this(0, 0, 0);
+	}
+
+	public Task(int _id, int tArriving, int prio, String graphFile) {
+
+		DOTImporter<Cloudlet, DefaultEdge> importer = new DOTImporter<Cloudlet, DefaultEdge>(
+				new VertexProvider<Cloudlet>() {
+					@Override
+					public Cloudlet buildVertex(String label,
+							Map<String, String> attributes) {
+						int id = Integer.parseInt(label);
+						long length = Long.parseLong(attributes
+								.get(Task.CLOUDLETLENGTH));
+						return new Cloudlet(id, length, Task.DEFAULTPESNUMBER,
+								Task.DEFAULTFILESIZE, Task.DEFAULTFILESIZE,
+								Task.DEFAULTUTILIZATIONMODEL,
+								Task.DEFAULTUTILIZATIONMODEL,
+								Task.DEFAULTUTILIZATIONMODEL);
+					}
+				}, new EdgeProvider<Cloudlet, DefaultEdge>() {
+					@Override
+					public DefaultEdge buildEdge(Cloudlet from, Cloudlet to,
+							String label, Map<String, String> attributes) {
+						// TODO Auto-generated method stub
+						return new DefaultEdge();
+					}
+				}, null);
+
+		graph = new DirectedAcyclicGraph<Cloudlet, DefaultEdge>(
+				DefaultEdge.class);
+
+		try {
+			byte[] encoded = Files.readAllBytes(Paths.get(graphFile));
+			importer.read(new String(encoded), graph);
+		} catch (ImportException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		timeArriving = tArriving;
+		priority = prio;
+		completedSubTask = new ArrayList<Cloudlet>();
+		id = _id;
+	}
+
+	public void setUserId(int _id) {
+		Iterator<Cloudlet> it = graph.iterator();
+		while (it.hasNext()) {
+			it.next().setUserId(_id);
+		}
 	}
 
 	public Task(int _id, int tArriving, int prio) {
@@ -96,7 +161,7 @@ public class Task implements Iterable<Cloudlet> {
 		if (!graph.containsVertex(cl)) {
 			return false;
 		}
-		if (!completedSubTask.contains(cl)) {
+		if (completedSubTask.contains(cl)) {
 			return false;
 		}
 		Set<DefaultEdge> edges = graph.incomingEdgesOf(cl);
@@ -135,6 +200,29 @@ public class Task implements Iterable<Cloudlet> {
 		}
 
 		return runnableSubtasks;
+	}
+
+	public String exportGraph() {
+		DOTExporter<Cloudlet, DefaultEdge> exporter = new DOTExporter<Cloudlet, DefaultEdge>(
+				new VertexNameProvider<Cloudlet>() {
+					@Override
+					public String getVertexName(Cloudlet vertex) {
+						return String.valueOf(vertex.getCloudletId());
+					}
+				}, null, null, new ComponentAttributeProvider<Cloudlet>() {
+					@Override
+					public Map<String, String> getComponentAttributes(
+							Cloudlet component) {
+						Map<String, String> map = new HashMap<String, String>();
+						map.put(Task.CLOUDLETLENGTH,
+								String.valueOf(component.getCloudletLength()));
+						return map;
+					}
+				}, null);
+
+		StringWriter writer = new StringWriter();
+		exporter.export(writer, this.graph);
+		return writer.toString();
 	}
 
 	public boolean contains(Cloudlet v) {
@@ -177,4 +265,19 @@ public class Task implements Iterable<Cloudlet> {
 		return graph.iterator();
 	}
 
+	public int getTimeArriving() {
+		return timeArriving;
+	}
+
+	public int getPriority() {
+		return priority;
+	}
+
+	public void setPriority(int priority) {
+		this.priority = priority;
+	}
+
+	public int getId() {
+		return id;
+	}
 }

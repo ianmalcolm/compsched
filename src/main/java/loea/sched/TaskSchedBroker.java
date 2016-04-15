@@ -106,6 +106,7 @@ public class TaskSchedBroker extends DatacenterBroker {
 				+ ": Sending cloudlet " + cloudlet.getCloudletId() + " to VM #"
 				+ vm.getId());
 		cloudlet.setVmId(vm.getId());
+		getCloudletList().add(cloudlet);
 		sendNow(getVmsToDatacentersMap().get(vm.getId()),
 				CloudSimTags.CLOUDLET_SUBMIT, cloudlet);
 		cloudletsSubmitted++;

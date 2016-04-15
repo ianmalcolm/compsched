@@ -1,20 +1,7 @@
 package loea.task;
 
-import java.io.StringWriter;
-import java.util.HashMap;
-import java.util.Map;
-
 import loea.sched.task.Task;
 
-import org.cloudbus.cloudsim.Cloudlet;
-import org.jgrapht.ext.ComponentAttributeProvider;
-import org.jgrapht.ext.DOTExporter;
-import org.jgrapht.ext.DOTImporter;
-import org.jgrapht.ext.EdgeProvider;
-import org.jgrapht.ext.ImportException;
-import org.jgrapht.ext.VertexNameProvider;
-import org.jgrapht.ext.VertexProvider;
-import org.jgrapht.graph.DefaultEdge;
 import org.junit.Test;
 
 public class TaskTest {
@@ -28,26 +15,9 @@ public class TaskTest {
 
 		Task s = Task.randomTask(8, 0.5, 0);
 
-		DOTExporter<Cloudlet, DefaultEdge> exporter = new DOTExporter<Cloudlet, DefaultEdge>(
-				new VertexNameProvider<Cloudlet>() {
-					@Override
-					public String getVertexName(Cloudlet vertex) {
-						return String.valueOf(vertex.getCloudletId());
-					}
-				}, null, null, new ComponentAttributeProvider<Cloudlet>() {
-					@Override
-					public Map<String, String> getComponentAttributes(
-							Cloudlet component) {
-						Map<String, String> map = new HashMap<String, String>();
-						map.put(Task.CLOUDLETLENGTH,
-								String.valueOf(component.getCloudletLength()));
-						return map;
-					}
-				}, null);
+		String g = s.exportGraph();
 
-		StringWriter writer = new StringWriter();
-		// exporter.export(writer, s);
-		System.out.println(writer.toString());
+		System.out.println(g);
 
 		// DOTImporter<Cloudlet, DefaultEdge> importer = new
 		// DOTImporter<Cloudlet, DefaultEdge>(
