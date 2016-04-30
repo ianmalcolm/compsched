@@ -9,7 +9,7 @@ import java.util.List;
 import loea.sched.task.Task;
 
 import org.cloudbus.cloudsim.Cloudlet;
-import org.cloudbus.cloudsim.CloudletSchedulerTimeShared;
+import org.cloudbus.cloudsim.CloudletSchedulerSpaceShared;
 import org.cloudbus.cloudsim.Datacenter;
 import org.cloudbus.cloudsim.DatacenterCharacteristics;
 import org.cloudbus.cloudsim.Host;
@@ -18,7 +18,7 @@ import org.cloudbus.cloudsim.Pe;
 import org.cloudbus.cloudsim.Storage;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.VmAllocationPolicySimple;
-import org.cloudbus.cloudsim.VmSchedulerTimeShared;
+import org.cloudbus.cloudsim.VmSchedulerSpaceShared;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.provisioners.BwProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.PeProvisionerSimple;
@@ -74,12 +74,15 @@ public class Simulator {
 			int pesNumber = 1; // number of cpus
 			String vmm = "Xen"; // VMM name
 
-			// create VM
-			Vm vm = new Vm(vmid, brokerId, mips, pesNumber, ram, bw, size, vmm,
-					new CloudletSchedulerTimeShared());
-
-			// add the VM to the vmList
-			vmlist.add(vm);
+			// create VM and add the VM to the vmList
+			vmlist.add(new Vm(vmid++, brokerId, mips, pesNumber, ram, bw, size,
+					vmm, new CloudletSchedulerSpaceShared()));
+			vmlist.add(new Vm(vmid++, brokerId, mips, pesNumber, ram, bw, size,
+					vmm, new CloudletSchedulerSpaceShared()));
+			vmlist.add(new Vm(vmid++, brokerId, mips, pesNumber, ram, bw, size,
+					vmm, new CloudletSchedulerSpaceShared()));
+			vmlist.add(new Vm(vmid++, brokerId, mips, pesNumber, ram, bw, size,
+					vmm, new CloudletSchedulerSpaceShared()));
 
 			// submit vm list to the broker
 			broker.submitVmList(vmlist);
@@ -87,7 +90,7 @@ public class Simulator {
 			// Fifth step: Create an empty task list
 			taskList = new ArrayList<Task>();
 
-			Task t = new Task(0,0,0,"tasks/example1.txt");
+			Task t = new Task(0, 0, 0, "tasks/example1.txt");
 			t.setUserId(brokerId);
 
 			// add the task to the list
@@ -132,11 +135,17 @@ public class Simulator {
 		List<Pe> peList = new ArrayList<Pe>();
 
 		int mips = 1000;
+		int peId = 0;
 
 		// 3. Create PEs and add these into a list.
-		peList.add(new Pe(0, new PeProvisionerSimple(mips))); // need to store
-																// Pe id and
-																// MIPS Rating
+		peList.add(new Pe(peId++, new PeProvisionerSimple(mips))); // need to
+																	// store
+																	// Pe id and
+																	// MIPS
+																	// Rating
+		peList.add(new Pe(peId++, new PeProvisionerSimple(mips)));
+		peList.add(new Pe(peId++, new PeProvisionerSimple(mips)));
+		peList.add(new Pe(peId++, new PeProvisionerSimple(mips)));
 
 		// 4. Create Host with its id and list of PEs and add them to the list
 		// of machines
@@ -147,7 +156,7 @@ public class Simulator {
 
 		hostList.add(new Host(hostId, new RamProvisionerSimple(ram),
 				new BwProvisionerSimple(bw), storage, peList,
-				new VmSchedulerTimeShared(peList))); // This is our machine
+				new VmSchedulerSpaceShared(peList))); // This is our machine
 
 		// 5. Create a DatacenterCharacteristics object that stores the
 		// properties of a data center: architecture, OS, list of

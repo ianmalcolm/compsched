@@ -29,25 +29,6 @@ public class TaskSchedBroker extends DatacenterBroker {
 		getTaskList().addAll(list);
 	}
 
-	protected Comparator<Vm> loadComp = new Comparator<Vm>() {
-		@Override
-		public int compare(Vm o1, Vm o2) {
-			int load1 = getTotalLoad(o1);
-			int load2 = getTotalLoad(o2);
-			if (load1 > load2) {
-				return 1;
-			} else if (load1 == load2) {
-				return 0;
-			} else {
-				return -1;
-			}
-		}
-
-		private int getTotalLoad(Vm o) {
-			return o.getCloudletScheduler().runningCloudlets();
-		}
-	};
-
 	/**
 	 * Gets the task list.
 	 * 
@@ -73,35 +54,86 @@ public class TaskSchedBroker extends DatacenterBroker {
 			runnableCloudlets.addAll(list);
 		}
 
-		for (Cloudlet cloudlet : runnableCloudlets) {
-			submitCloudlet(cloudlet);
+		submitCloudlets(runnableCloudlets);
+	}
+
+	/**
+	 * Submit Cloudlets to the created VMs
+	 * 
+	 * @param cloudlets
+	 */
+	protected void submitCloudlets(List<Cloudlet> cloudlets) {
+
+		class VManditsLoad implements Comparable<VManditsLoad> {
+			Vm vm;
+			int load;
+
+			public VManditsLoad(Vm _vm) {
+				vm = _vm;
+				load = vm.getCloudletScheduler().runningCloudlets();
+			}
+
+			public void add(int newload) {
+				load += newload;
+			}
+
+			@Override
+			public int compareTo(VManditsLoad arg0) {
+				if (load > arg0.load) {
+					return 1;
+				} else if (load < arg0.load) {
+					return -1;
+				} else {
+					return 0;
+				}
+			}
+
+		}
+
+		// process binded cloudlets
+		{
+			List<Cloudlet> toRemove = new ArrayList<Cloudlet>();
+			for (Cloudlet cloudlet : cloudlets) {
+				if (cloudlet.getVmId() != -1) {
+					// submit to the specific vm
+					Vm vm = VmList.getById(getVmsCreatedList(),
+							cloudlet.getVmId());
+					if (vm == null) { // vm was not created
+						Log.printLine(CloudSim.clock() + ": " + getName()
+								+ ": Postponing execution of cloudlet "
+								+ cloudlet.getCloudletId()
+								+ ": bount VM not available");
+					}
+					submitCloudlet(cloudlet, vm);
+					toRemove.add(cloudlet);
+				}
+			}
+			cloudlets.removeAll(toRemove);
+		}
+
+		// if user didn't bind the cloudlets and they have not been executed
+		// yet
+
+		List<VManditsLoad> vmLoadList = new ArrayList<VManditsLoad>();
+
+		for (Vm vm : getVmsCreatedList()) {
+			vmLoadList.add(new VManditsLoad(vm));
+		}
+
+		for (Cloudlet cloudlet : cloudlets) {
+			Collections.sort(vmLoadList);
+			Vm vm = vmLoadList.get(0).vm;
+			submitCloudlet(cloudlet, vm);
+			vmLoadList.get(0).add(1);
 		}
 	}
 
 	/**
 	 * Submit a Cloudlet to the created VMs
 	 * 
-	 * @param cloudlet
+	 * @param cloudlets
 	 */
-	protected void submitCloudlet(Cloudlet cloudlet) {
-
-		Vm vm;
-		// if user didn't bind this cloudlet and it has not been executed
-		// yet
-		if (cloudlet.getVmId() == -1) {
-			List<Vm> vmLoadList = new ArrayList<Vm>();
-			vmLoadList.addAll(getVmsCreatedList());
-			Collections.sort(vmLoadList, Collections.reverseOrder(loadComp));
-			vm = vmLoadList.get(0);
-		} else { // submit to the specific vm
-			vm = VmList.getById(getVmsCreatedList(), cloudlet.getVmId());
-			if (vm == null) { // vm was not created
-				Log.printLine(CloudSim.clock() + ": " + getName()
-						+ ": Postponing execution of cloudlet "
-						+ cloudlet.getCloudletId() + ": bount VM not available");
-			}
-		}
-
+	protected void submitCloudlet(Cloudlet cloudlet, Vm vm) {
 		Log.printLine(CloudSim.clock() + ": " + getName()
 				+ ": Sending cloudlet " + cloudlet.getCloudletId() + " to VM #"
 				+ vm.getId());
@@ -127,14 +159,19 @@ public class TaskSchedBroker extends DatacenterBroker {
 				+ cloudlet.getCloudletId() + " received");
 		cloudletsSubmitted--;
 
+		List<Cloudlet> toAdd = new ArrayList<Cloudlet>();
+
 		for (Task t : taskList) {
 			if (t.contains(cloudlet)) {
 				t.complete(cloudlet);
 				List<Cloudlet> readylist = t.getRunnableSubtasks(cloudlet);
 				for (Cloudlet readyTask : readylist) {
-					submitCloudlet(readyTask);
+					toAdd.add(readyTask);
 				}
 			}
+		}
+		if (!toAdd.isEmpty()) {
+			submitCloudlets(toAdd);
 		}
 
 		if (getCloudletList().size() == 0 && cloudletsSubmitted == 0) { // all
