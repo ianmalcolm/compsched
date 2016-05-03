@@ -26,9 +26,9 @@ import org.jgrapht.ext.VertexNameProvider;
 import org.jgrapht.ext.VertexProvider;
 import org.jgrapht.graph.DefaultEdge;
 
-public class Task implements Iterable<Cloudlet> {
+public class Task implements Iterable<SubTask> {
 
-	private DirectedAcyclicGraph<Cloudlet, DefaultEdge> graph = null;
+	private DirectedAcyclicGraph<SubTask, DefaultEdge> graph = null;
 
 	private int timeArriving = 0;
 
@@ -53,30 +53,26 @@ public class Task implements Iterable<Cloudlet> {
 
 	public Task(int _id, int tArriving, int prio, String graphFile) {
 
-		DOTImporter<Cloudlet, DefaultEdge> importer = new DOTImporter<Cloudlet, DefaultEdge>(
-				new VertexProvider<Cloudlet>() {
+		DOTImporter<SubTask, DefaultEdge> importer = new DOTImporter<SubTask, DefaultEdge>(
+				new VertexProvider<SubTask>() {
 					@Override
-					public Cloudlet buildVertex(String label,
+					public SubTask buildVertex(String label,
 							Map<String, String> attributes) {
 						int id = Integer.parseInt(label);
 						long length = Long.parseLong(attributes
 								.get(Task.CLOUDLETLENGTH));
-						return new Cloudlet(id, length, Task.DEFAULTPESNUMBER,
-								Task.DEFAULTFILESIZE, Task.DEFAULTFILESIZE,
-								Task.DEFAULTUTILIZATIONMODEL,
-								Task.DEFAULTUTILIZATIONMODEL,
-								Task.DEFAULTUTILIZATIONMODEL);
+						return new SubTask(id, length);
 					}
-				}, new EdgeProvider<Cloudlet, DefaultEdge>() {
+				}, new EdgeProvider<SubTask, DefaultEdge>() {
 					@Override
-					public DefaultEdge buildEdge(Cloudlet from, Cloudlet to,
+					public DefaultEdge buildEdge(SubTask from, SubTask to,
 							String label, Map<String, String> attributes) {
 						// TODO Auto-generated method stub
 						return new DefaultEdge();
 					}
 				}, null);
 
-		graph = new DirectedAcyclicGraph<Cloudlet, DefaultEdge>(
+		graph = new DirectedAcyclicGraph<SubTask, DefaultEdge>(
 				DefaultEdge.class);
 
 		try {
@@ -92,17 +88,19 @@ public class Task implements Iterable<Cloudlet> {
 		priority = prio;
 		completedSubTask = new ArrayList<Cloudlet>();
 		id = _id;
+
+		calcHeight();
 	}
 
 	public void setUserId(int _id) {
-		Iterator<Cloudlet> it = graph.iterator();
+		Iterator<SubTask> it = graph.iterator();
 		while (it.hasNext()) {
 			it.next().setUserId(_id);
 		}
 	}
 
 	public Task(int _id, int tArriving, int prio) {
-		graph = new DirectedAcyclicGraph<Cloudlet, DefaultEdge>(
+		graph = new DirectedAcyclicGraph<SubTask, DefaultEdge>(
 				DefaultEdge.class);
 		timeArriving = tArriving;
 		priority = prio;
@@ -110,11 +108,16 @@ public class Task implements Iterable<Cloudlet> {
 		id = _id;
 	}
 
-	public void addSubTask(Cloudlet cl) {
-		graph.addVertex(cl);
+	public void addSubTask(SubTask st) {
+		graph.addVertex(st);
+		st.setParent(this);
+
+		// when first added to a task, the subtask has no dependency.
+		// therefore the height must be 0
+		st.setHeight(0);
 	}
 
-	public boolean addDependency(Cloudlet src, Cloudlet dst) {
+	public boolean addDependency(SubTask src, SubTask dst) {
 		try {
 			graph.addDagEdge(src, dst);
 			return true;
@@ -124,7 +127,19 @@ public class Task implements Iterable<Cloudlet> {
 		}
 	}
 
-	public boolean complete(Cloudlet cl) {
+	// calculate the height of all subtasks
+	private void calcHeight() {
+		for (SubTask st : this) {
+			for (DefaultEdge edge : graph.incomingEdgesOf(st)) {
+				int srcHeight = graph.getEdgeSource(edge).getHeight();
+				if (st.getHeight() < srcHeight + 1) {
+					st.setHeight(srcHeight + 1);
+				}
+			}
+		}
+	}
+
+	public boolean complete(SubTask cl) {
 		if (!graph.containsVertex(cl)) {
 			return false;
 		}
@@ -135,21 +150,25 @@ public class Task implements Iterable<Cloudlet> {
 		return true;
 	}
 
+	public boolean complete(Cloudlet cl) {
+		return complete((SubTask) cl);
+	}
+
 	public List<Cloudlet> getRunnableSubtasks() {
 
 		List<Cloudlet> runnableSubtasks = new ArrayList<Cloudlet>();
-		Iterator<Cloudlet> it = graph.iterator();
+		Iterator<SubTask> it = graph.iterator();
 
 		while (it.hasNext()) {
-			Cloudlet cl = it.next();
+			SubTask st = it.next();
 
-			if (graph.inDegreeOf(cl) == 0) {
-				if (!completedSubTask.contains(cl)) {
-					runnableSubtasks.add(cl);
+			if (graph.inDegreeOf(st) == 0) {
+				if (!completedSubTask.contains(st)) {
+					runnableSubtasks.add(st);
 				}
 			} else {
-				if (isReady(cl)) {
-					runnableSubtasks.add(cl);
+				if (isReady(st)) {
+					runnableSubtasks.add(st);
 				}
 			}
 		}
@@ -157,14 +176,14 @@ public class Task implements Iterable<Cloudlet> {
 		return runnableSubtasks;
 	}
 
-	private boolean isReady(Cloudlet cl) {
-		if (!graph.containsVertex(cl)) {
+	private boolean isReady(SubTask st) {
+		if (!graph.containsVertex(st)) {
 			return false;
 		}
-		if (completedSubTask.contains(cl)) {
+		if (completedSubTask.contains(st)) {
 			return false;
 		}
-		Set<DefaultEdge> edges = graph.incomingEdgesOf(cl);
+		Set<DefaultEdge> edges = graph.incomingEdgesOf(st);
 		boolean allPrecedentComplete = true;
 		for (DefaultEdge e : edges) {
 			Cloudlet src = graph.getEdgeSource(e);
@@ -180,9 +199,9 @@ public class Task implements Iterable<Cloudlet> {
 		}
 	}
 
-	public List<Cloudlet> getRunnableSubtasks(Cloudlet src) {
+	public List<SubTask> getRunnableSubtasks(SubTask src) {
 
-		List<Cloudlet> runnableSubtasks = new ArrayList<Cloudlet>();
+		List<SubTask> runnableSubtasks = new ArrayList<SubTask>();
 
 		if (!graph.containsVertex(src)) {
 			return null;
@@ -193,7 +212,7 @@ public class Task implements Iterable<Cloudlet> {
 
 		Set<DefaultEdge> edges = graph.outgoingEdgesOf(src);
 		for (DefaultEdge e : edges) {
-			Cloudlet dst = graph.getEdgeTarget(e);
+			SubTask dst = graph.getEdgeTarget(e);
 			if (isReady(dst)) {
 				runnableSubtasks.add(dst);
 			}
@@ -202,17 +221,26 @@ public class Task implements Iterable<Cloudlet> {
 		return runnableSubtasks;
 	}
 
+	public List<Cloudlet> getRunnableSubtasks(Cloudlet src) {
+		List<Cloudlet> clResults = new ArrayList<Cloudlet>();
+		List<SubTask> stResults = getRunnableSubtasks((SubTask) src);
+		for (SubTask st : stResults) {
+			clResults.add(st);
+		}
+		return clResults;
+	}
+
 	public String exportGraph() {
-		DOTExporter<Cloudlet, DefaultEdge> exporter = new DOTExporter<Cloudlet, DefaultEdge>(
-				new VertexNameProvider<Cloudlet>() {
+		DOTExporter<SubTask, DefaultEdge> exporter = new DOTExporter<SubTask, DefaultEdge>(
+				new VertexNameProvider<SubTask>() {
 					@Override
-					public String getVertexName(Cloudlet vertex) {
+					public String getVertexName(SubTask vertex) {
 						return String.valueOf(vertex.getCloudletId());
 					}
-				}, null, null, new ComponentAttributeProvider<Cloudlet>() {
+				}, null, null, new ComponentAttributeProvider<SubTask>() {
 					@Override
 					public Map<String, String> getComponentAttributes(
-							Cloudlet component) {
+							SubTask component) {
 						Map<String, String> map = new HashMap<String, String>();
 						map.put(Task.CLOUDLETLENGTH,
 								String.valueOf(component.getCloudletLength()));
@@ -225,25 +253,26 @@ public class Task implements Iterable<Cloudlet> {
 		return writer.toString();
 	}
 
-	public boolean contains(Cloudlet v) {
+	public boolean contains(SubTask v) {
 		return graph.containsVertex(v);
+	}
+
+	public boolean contains(Cloudlet v) {
+		return graph.containsVertex((SubTask) v);
 	}
 
 	public static Task randomTask(int numV, double probE, int brokerId) {
 
 		Task task = new Task();
-		ArrayList<Cloudlet> listCloudlet = new ArrayList<Cloudlet>();
+		ArrayList<SubTask> subtasks = new ArrayList<SubTask>();
 		Random r = new Random();
 
 		for (int i = 0; i < numV; i++) {
-			Cloudlet cl = new Cloudlet(i, r.nextInt(MAXIMUMLENGTH),
-					DEFAULTPESNUMBER, DEFAULTFILESIZE, DEFAULTFILESIZE,
-					DEFAULTUTILIZATIONMODEL, DEFAULTUTILIZATIONMODEL,
-					DEFAULTUTILIZATIONMODEL);
-			cl.setVmId(-1);
-			cl.setUserId(brokerId);
-			listCloudlet.add(cl);
-			task.addSubTask(cl);
+			SubTask st = new SubTask(i, r.nextInt(MAXIMUMLENGTH));
+			st.setVmId(-1);
+			st.setUserId(brokerId);
+			subtasks.add(st);
+			task.addSubTask(st);
 		}
 
 		// create a DAG with a lower triangular matrix
@@ -251,17 +280,19 @@ public class Task implements Iterable<Cloudlet> {
 			for (int j = 0; j < i; j++) {
 				double dice = r.nextDouble();
 				if (dice < probE) {
-					task.addDependency(listCloudlet.get(j), listCloudlet.get(i));
+					task.addDependency(subtasks.get(j), subtasks.get(i));
 				}
 			}
 		}
+
+		task.calcHeight();
 
 		return task;
 
 	}
 
 	@Override
-	public Iterator<Cloudlet> iterator() {
+	public Iterator<SubTask> iterator() {
 		return graph.iterator();
 	}
 
@@ -280,4 +311,5 @@ public class Task implements Iterable<Cloudlet> {
 	public int getId() {
 		return id;
 	}
+
 }

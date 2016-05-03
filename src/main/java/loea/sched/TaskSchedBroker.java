@@ -2,8 +2,9 @@ package loea.sched;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
+
+import loea.sched.scheduler.TaskScheduler;
 import loea.sched.task.Task;
 
 import org.cloudbus.cloudsim.Cloudlet;
@@ -17,11 +18,15 @@ import org.cloudbus.cloudsim.lists.VmList;
 
 public class TaskSchedBroker extends DatacenterBroker {
 
+	private final TaskScheduler scheduler;
+
 	/** The task list. */
 	protected List<? extends Task> taskList;
 
-	public TaskSchedBroker(String name) throws Exception {
+	public TaskSchedBroker(String name, TaskScheduler _scheduler)
+			throws Exception {
 		super(name);
+		scheduler = _scheduler;
 		taskList = new ArrayList<Task>();
 	}
 
@@ -189,6 +194,10 @@ public class TaskSchedBroker extends DatacenterBroker {
 				createVmsInDatacenter(0);
 			}
 		}
+	}
+
+	public TaskScheduler getScheduler() {
+		return scheduler;
 	}
 
 }

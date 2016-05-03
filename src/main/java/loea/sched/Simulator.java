@@ -6,6 +6,7 @@ import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
 
+import loea.sched.scheduler.TaskSchedulerBrokerLevel;
 import loea.sched.task.Task;
 
 import org.cloudbus.cloudsim.Cloudlet;
@@ -204,7 +205,7 @@ public class Simulator {
 	private static TaskSchedBroker createBroker() {
 		TaskSchedBroker broker = null;
 		try {
-			broker = new TaskSchedBroker("Broker");
+			broker = new TaskSchedBroker("Broker", new TaskSchedulerBrokerLevel());
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
