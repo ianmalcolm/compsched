@@ -1,18 +1,15 @@
 package loea.sched;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import loea.sched.scheduler.TaskScheduler;
-import loea.sched.scheduler.SubTaskScheduler;
-import loea.sched.task.SubTask;
+import loea.sched.task.Subtask;
 import loea.sched.task.Task;
 
 import org.cloudbus.cloudsim.Cloudlet;
-import org.cloudbus.cloudsim.CloudletScheduler;
-import org.cloudbus.cloudsim.Consts;
 import org.cloudbus.cloudsim.DatacenterBroker;
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.Vm;
@@ -25,18 +22,16 @@ public class TaskSchedBroker extends DatacenterBroker {
 
 	private final TaskScheduler scheduler;
 
-	/** The task list. */
-	protected List<? extends Task> taskList;
-
 	public TaskSchedBroker(String name, TaskScheduler _scheduler)
 			throws Exception {
 		super(name);
 		scheduler = _scheduler;
-		taskList = new ArrayList<Task>();
 	}
 
-	public void submitTaskList(List<? extends Task> list) {
-		getTaskList().addAll(list);
+	public void submitTaskList(List<Task> list) {
+		for (Task t : list) {
+			scheduler.submitTask(t);
+		}
 	}
 
 	/**
@@ -46,9 +41,8 @@ public class TaskSchedBroker extends DatacenterBroker {
 	 *            the generic type
 	 * @return the task list
 	 */
-	@SuppressWarnings("unchecked")
-	public <T extends Task> List<T> getTaskList() {
-		return (List<T>) taskList;
+	public List<Task> getTaskList() {
+		return scheduler.getTaskList();
 	}
 
 	/**
@@ -58,93 +52,22 @@ public class TaskSchedBroker extends DatacenterBroker {
 	 * @post $none
 	 */
 	protected void submitCloudlets() {
-		List<Cloudlet> runnableCloudlets = new ArrayList<Cloudlet>();
-		for (Task t : taskList) {
-			List<Cloudlet> list = t.getRunnableSubtasks();
-			runnableCloudlets.addAll(list);
+		Map<Subtask, Vm> map = scheduler.schedule();
+		if (!map.isEmpty()) {
+			submitCloudlets(map);
 		}
-
-		submitCloudlets(runnableCloudlets);
 	}
 
 	/**
-	 * Submit Cloudlets to the created VMs
+	 * Submit subtasks to the created VMs
 	 * 
 	 * @param cloudlets
 	 */
-	protected void submitCloudlets(List<Cloudlet> cloudlets) {
-
-		class VManditsLoad implements Comparable<VManditsLoad> {
-			Vm vm;
-			long load;
-
-			public VManditsLoad(Vm _vm) {
-				vm = _vm;
-
-				CloudletScheduler cs = vm.getCloudletScheduler();
-				if (cs instanceof SubTaskScheduler) {
-					Map<SubTask, Long> _loads = ((SubTaskScheduler) cs).getRemainingWorkload();
-					for (long _load : _loads.values()) {
-						load += _load / Consts.MILLION;
-					}
-					
-				} else {
-					throw new UnsupportedOperationException();
-				}
-			}
-
-			public void add(long newload) {
-				load += newload;
-			}
-
-			@Override
-			public int compareTo(VManditsLoad arg0) {
-				if (load > arg0.load) {
-					return 1;
-				} else if (load < arg0.load) {
-					return -1;
-				} else {
-					return 0;
-				}
-			}
-
-		}
-
-		// process binded cloudlets
-		{
-			List<Cloudlet> toRemove = new ArrayList<Cloudlet>();
-			for (Cloudlet cloudlet : cloudlets) {
-				if (cloudlet.getVmId() != -1) {
-					// submit to the specific vm
-					Vm vm = VmList.getById(getVmsCreatedList(),
-							cloudlet.getVmId());
-					if (vm == null) { // vm was not created
-						Log.printLine(CloudSim.clock() + ": " + getName()
-								+ ": Postponing execution of cloudlet "
-								+ cloudlet.getCloudletId()
-								+ ": bount VM not available");
-					}
-					submitCloudlet(cloudlet, vm);
-					toRemove.add(cloudlet);
-				}
-			}
-			cloudlets.removeAll(toRemove);
-		}
-
-		// if user didn't bind the cloudlets and they have not been executed
-		// yet
-
-		List<VManditsLoad> vmLoadList = new ArrayList<VManditsLoad>();
-
-		for (Vm vm : getVmsCreatedList()) {
-			vmLoadList.add(new VManditsLoad(vm));
-		}
-
-		for (Cloudlet cloudlet : cloudlets) {
-			Collections.sort(vmLoadList);
-			Vm vm = vmLoadList.get(0).vm;
-			submitCloudlet(cloudlet, vm);
-			vmLoadList.get(0).add(cloudlet.getCloudletLength());
+	protected void submitCloudlets(Map<Subtask, Vm> map) {
+		Iterator<Entry<Subtask, Vm>> it = map.entrySet().iterator();
+		while (it.hasNext()) {
+			Entry<Subtask, Vm> entry = it.next();
+			submitCloudlet(entry.getKey(), entry.getValue());
 		}
 	}
 
@@ -153,15 +76,82 @@ public class TaskSchedBroker extends DatacenterBroker {
 	 * 
 	 * @param cloudlets
 	 */
-	protected void submitCloudlet(Cloudlet cloudlet, Vm vm) {
+	protected void submitCloudlet(Subtask subtask, Vm vm) {
 		Log.printLine(CloudSim.clock() + ": " + getName()
-				+ ": Sending cloudlet " + cloudlet.getCloudletId() + " to VM #"
+				+ ": Sending cloudlet " + subtask.getCloudletId() + " to VM #"
 				+ vm.getId());
-		cloudlet.setVmId(vm.getId());
-		getCloudletList().add(cloudlet);
+		subtask.setVmId(vm.getId());
+		getCloudletList().add(subtask);
+		subtask.issued();
 		sendNow(getVmsToDatacentersMap().get(vm.getId()),
-				CloudSimTags.CLOUDLET_SUBMIT, cloudlet);
-		cloudletsSubmitted++;
+				CloudSimTags.CLOUDLET_SUBMIT, subtask);
+	}
+
+	/**
+	 * Process the ack received due to a request for VM creation.
+	 * 
+	 * @param ev
+	 *            a SimEvent object
+	 * @pre ev != null
+	 * @post $none
+	 */
+	protected void processVmCreate(SimEvent ev) {
+		int[] data = (int[]) ev.getData();
+		int datacenterId = data[0];
+		int vmId = data[1];
+		int result = data[2];
+
+		if (result == CloudSimTags.TRUE) {
+			getVmsToDatacentersMap().put(vmId, datacenterId);
+			Vm vm = VmList.getById(getVmList(), vmId);
+			getVmsCreatedList().add(vm);
+			scheduler.addVM(vm);
+			Log.printLine(CloudSim.clock()
+					+ ": "
+					+ getName()
+					+ ": VM #"
+					+ vmId
+					+ " has been created in Datacenter #"
+					+ datacenterId
+					+ ", Host #"
+					+ VmList.getById(getVmsCreatedList(), vmId).getHost()
+							.getId());
+		} else {
+			Log.printLine(CloudSim.clock() + ": " + getName()
+					+ ": Creation of VM #" + vmId + " failed in Datacenter #"
+					+ datacenterId);
+		}
+
+		incrementVmsAcks();
+
+		// all the requested VMs have been created
+		if (getVmsCreatedList().size() == getVmList().size()
+				- getVmsDestroyed()) {
+			submitCloudlets();
+		} else {
+			// all the acks received, but some VMs were not created
+			if (getVmsRequested() == getVmsAcks()) {
+				// find id of the next datacenter that has not been tried
+				for (int nextDatacenterId : getDatacenterIdsList()) {
+					if (!getDatacenterRequestedIdsList().contains(
+							nextDatacenterId)) {
+						createVmsInDatacenter(nextDatacenterId);
+						return;
+					}
+				}
+
+				// all datacenters already queried
+				if (getVmsCreatedList().size() > 0) { // if some vm were created
+					submitCloudlets();
+				} else { // no vms created. abort
+					Log.printLine(CloudSim.clock()
+							+ ": "
+							+ getName()
+							+ ": none of the required VMs could be created. Aborting");
+					finishExecution();
+				}
+			}
+		}
 	}
 
 	/**
@@ -177,38 +167,37 @@ public class TaskSchedBroker extends DatacenterBroker {
 		getCloudletReceivedList().add(cloudlet);
 		Log.printLine(CloudSim.clock() + ": " + getName() + ": Cloudlet "
 				+ cloudlet.getCloudletId() + " received");
-		cloudletsSubmitted--;
 
-		List<Cloudlet> toAdd = new ArrayList<Cloudlet>();
-
-		for (Task t : taskList) {
-			if (t.contains(cloudlet)) {
-				t.complete(cloudlet);
-				List<Cloudlet> readylist = t.getRunnableSubtasks(cloudlet);
-				for (Cloudlet readyTask : readylist) {
-					toAdd.add(readyTask);
-				}
-			}
-		}
-		if (!toAdd.isEmpty()) {
-			submitCloudlets(toAdd);
+		scheduler.completed((Subtask) cloudlet);
+		Map<Subtask, Vm> map = scheduler.schedule();
+		if (!map.isEmpty()) {
+			submitCloudlets(map);
 		}
 
-		if (getCloudletList().size() == 0 && cloudletsSubmitted == 0) { // all
-																		// cloudlets
-																		// executed
+		if (scheduler.isComplete()) { // all subtasks executed
 			Log.printLine(CloudSim.clock() + ": " + getName()
-					+ ": All Cloudlets executed. Finishing...");
+					+ ": All subtasks executed. Finishing...");
 			clearDatacenters();
 			finishExecution();
-		} else { // some cloudlets haven't finished yet
-			if (getCloudletList().size() > 0 && cloudletsSubmitted == 0) {
-				// all the cloudlets sent finished. It means that some bount
-				// cloudlet is waiting its VM be created
-				clearDatacenters();
-				createVmsInDatacenter(0);
-			}
 		}
+	}
+
+	/**
+	 * Destroy the virtual machines running in datacenters.
+	 * 
+	 * @pre $none
+	 * @post $none
+	 */
+	protected void clearDatacenters() {
+		for (Vm vm : getVmsCreatedList()) {
+			Log.printLine(CloudSim.clock() + ": " + getName()
+					+ ": Destroying VM #" + vm.getId());
+			sendNow(getVmsToDatacentersMap().get(vm.getId()),
+					CloudSimTags.VM_DESTROY, vm);
+			scheduler.removeVM(vm);
+		}
+
+		getVmsCreatedList().clear();
 	}
 
 	public TaskScheduler getScheduler() {

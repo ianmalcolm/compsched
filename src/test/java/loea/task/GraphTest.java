@@ -7,7 +7,7 @@ import java.util.Random;
 
 import javax.swing.JFrame;
 
-import loea.sched.task.SubTask;
+import loea.sched.task.Subtask;
 
 import org.jgraph.JGraph;
 import org.jgrapht.experimental.dag.DirectedAcyclicGraph;
@@ -19,18 +19,18 @@ import org.junit.Test;
 public class GraphTest {
 
 	@Test
-	public DirectedAcyclicGraph<SubTask, DefaultEdge> RandomDAG() {
+	public DirectedAcyclicGraph<Subtask, DefaultEdge> RandomDAG() {
 
 		int numSubTask = 10;
 		double probDep = 0.3;
 
-		DirectedAcyclicGraph<SubTask, DefaultEdge> g = new DirectedAcyclicGraph<SubTask, DefaultEdge>(
+		DirectedAcyclicGraph<Subtask, DefaultEdge> g = new DirectedAcyclicGraph<Subtask, DefaultEdge>(
 				DefaultEdge.class);
 
-		ArrayList<SubTask> l = new ArrayList<SubTask>();
+		ArrayList<Subtask> l = new ArrayList<Subtask>();
 		Random r = new Random();
 		for (int i = 0; i < numSubTask; i++) {
-			SubTask st = new SubTask(i, r.nextLong());
+			Subtask st = new Subtask(i, r.nextLong());
 			l.add(st);
 			g.addVertex(st);
 		}
@@ -66,10 +66,10 @@ public class GraphTest {
 		});
 
 		GraphTest gt = new GraphTest();
-		DirectedAcyclicGraph<SubTask, DefaultEdge> g = gt.RandomDAG();
+		DirectedAcyclicGraph<Subtask, DefaultEdge> g = gt.RandomDAG();
 		// create a visualization using JGraph, via the adapter
 		JGraph jgraph = new JGraph(
-				new JGraphModelAdapter<SubTask, DefaultEdge>(g));
+				new JGraphModelAdapter<Subtask, DefaultEdge>(g));
 
 		// This is an empty content area in the frame
 		frame.getContentPane().add(jgraph);

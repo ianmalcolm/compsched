@@ -3,11 +3,16 @@ package loea.sched;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import loea.sched.scheduler.SubTaskSchedulerCloudletLevel;
 import loea.sched.scheduler.TaskSchedulerBrokerLevel;
+import loea.sched.task.Subtask;
 import loea.sched.task.Task;
 
 import org.cloudbus.cloudsim.Cloudlet;
@@ -91,7 +96,7 @@ public class Simulator {
 			// Fifth step: Create an empty task list
 			taskList = new ArrayList<Task>();
 
-			Task t = new Task(0, 0, 0, "tasks/example1.txt");
+			Task t = new Task(0, 0, 0, "tasks/example2.txt");
 			t.setUserId(brokerId);
 
 			// add the task to the list
@@ -108,6 +113,9 @@ public class Simulator {
 			// Final step: Print results when simulation is over
 			List<Cloudlet> newList = broker.getCloudletReceivedList();
 			printCloudletList(newList);
+			System.out.println();
+			printGantt(newList);
+			System.out.println();
 
 			Log.printLine("CloudSimExample1 finished!");
 		} catch (Exception e) {
@@ -205,7 +213,8 @@ public class Simulator {
 	private static TaskSchedBroker createBroker() {
 		TaskSchedBroker broker = null;
 		try {
-			broker = new TaskSchedBroker("Broker", new TaskSchedulerBrokerLevel());
+			broker = new TaskSchedBroker("Broker",
+					new TaskSchedulerBrokerLevel());
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
@@ -248,4 +257,94 @@ public class Simulator {
 			}
 		}
 	}
+
+	private static void printGantt(List<Cloudlet> list) {
+		GanttChart chart = new GanttChart();
+		for (Cloudlet cl : list) {
+			chart.add((Subtask) cl);
+		}
+		System.out.println(chart.print());
+	}
+
+}
+
+class GanttChart {
+	Map<Integer, List<Subtask>> map = new TreeMap<Integer, List<Subtask>>();
+	final static int lineWidth = 80;
+	final static String fill = "-";
+	final static String whitespace = " ";
+	final static int vmIdWidth = 8;
+	final static int taskIdWidth = 8;
+	double allTimeStart = Double.POSITIVE_INFINITY;
+	double allTimeEnd = Double.NEGATIVE_INFINITY;
+	double totalTimeSpan = allTimeEnd - allTimeStart;
+	double widthPerTime = getWidthPerTime(totalTimeSpan);
+
+	void add(Subtask st) {
+		if (!map.containsKey(st.getVmId())) {
+			map.put(st.getVmId(), new ArrayList<Subtask>());
+		}
+		map.get(st.getVmId()).add(st);
+		if (allTimeStart > st.getExecStartTime()) {
+			allTimeStart = st.getExecStartTime();
+		}
+		if (allTimeEnd < st.getFinishTime()) {
+			allTimeEnd = st.getFinishTime();
+		}
+		totalTimeSpan = allTimeEnd - allTimeStart;
+		widthPerTime = getWidthPerTime(totalTimeSpan);
+	}
+
+	double getWidthPerTime(double span) {
+		return (lineWidth - vmIdWidth - taskIdWidth) / span;
+	}
+
+	String print() {
+		if (map.isEmpty()) {
+			return "GanttChart cannot be printed because it is empty!";
+		}
+		String out = printTitle();
+
+		Iterator<Entry<Integer, List<Subtask>>> it = map.entrySet().iterator();
+		while (it.hasNext()) {
+			Entry<Integer, List<Subtask>> entry = it.next();
+			int vmId = entry.getKey();
+			List<Subtask> subtasks = entry.getValue();
+			out += printVMLine(vmId);
+			for (Subtask subtask : subtasks) {
+				out += printSubtaskLine(subtask);
+			}
+		}
+		return out;
+	}
+
+	String printTitle() {
+		String line = String.format("%-" + vmIdWidth + "s%-" + taskIdWidth
+				+ "s%s", "VMID", "TaskID", "Time Span");
+		line += "\n";
+		return line;
+	}
+
+	String printVMLine(int vmId) {
+		String line = String.format("%-" + vmIdWidth + "d", vmId);
+		line += "\n";
+		return line;
+	}
+
+	String printSubtaskLine(Subtask st) {
+
+		int startPosition = (int) (widthPerTime * st.getExecStartTime());
+		int periodWidth = (int) (widthPerTime * st.getActualCPUTime());
+
+		String line = new String(new char[vmIdWidth]).replace("\0", whitespace);
+		String taskId = String.format("%d.%d", st.getParent().getId(),
+				st.getCloudletId());
+		line += String.format("%-" + taskIdWidth + "s", taskId);
+		String period = new String(new char[periodWidth]).replace("\0", fill);
+		line += String
+				.format("%" + (startPosition + periodWidth) + "s", period);
+		line += "\n";
+		return line;
+	}
+
 }

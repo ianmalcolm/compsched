@@ -26,9 +26,9 @@ import org.jgrapht.ext.VertexNameProvider;
 import org.jgrapht.ext.VertexProvider;
 import org.jgrapht.graph.DefaultEdge;
 
-public class Task implements Iterable<SubTask> {
+public class Task implements Iterable<Subtask> {
 
-	private DirectedAcyclicGraph<SubTask, DefaultEdge> graph = null;
+	private DirectedAcyclicGraph<Subtask, DefaultEdge> graph = null;
 
 	private int timeArriving = 0;
 
@@ -42,7 +42,8 @@ public class Task implements Iterable<SubTask> {
 	public static final int MAXIMUMLENGTH = 1000000;
 	public static final String CLOUDLETLENGTH = "Length";
 
-	private List<Cloudlet> completedSubTask = null;
+	protected final List<Subtask> completedSubtasks;
+	protected final List<Subtask> issuedSubtasks;
 
 	/**
 	 * 
@@ -53,26 +54,27 @@ public class Task implements Iterable<SubTask> {
 
 	public Task(int _id, int tArriving, int prio, String graphFile) {
 
-		DOTImporter<SubTask, DefaultEdge> importer = new DOTImporter<SubTask, DefaultEdge>(
-				new VertexProvider<SubTask>() {
+		this(_id, tArriving, prio);
+
+		DOTImporter<Subtask, DefaultEdge> importer = new DOTImporter<Subtask, DefaultEdge>(
+				new VertexProvider<Subtask>() {
 					@Override
-					public SubTask buildVertex(String label,
+					public Subtask buildVertex(String label,
 							Map<String, String> attributes) {
 						int id = Integer.parseInt(label);
 						long length = Long.parseLong(attributes
 								.get(Task.CLOUDLETLENGTH));
-						return new SubTask(id, length);
+						return new Subtask(id, length);
 					}
-				}, new EdgeProvider<SubTask, DefaultEdge>() {
+				}, new EdgeProvider<Subtask, DefaultEdge>() {
 					@Override
-					public DefaultEdge buildEdge(SubTask from, SubTask to,
+					public DefaultEdge buildEdge(Subtask from, Subtask to,
 							String label, Map<String, String> attributes) {
-						// TODO Auto-generated method stub
 						return new DefaultEdge();
 					}
 				}, null);
 
-		graph = new DirectedAcyclicGraph<SubTask, DefaultEdge>(
+		graph = new DirectedAcyclicGraph<Subtask, DefaultEdge>(
 				DefaultEdge.class);
 
 		try {
@@ -84,31 +86,39 @@ public class Task implements Iterable<SubTask> {
 			e.printStackTrace();
 		}
 
-		timeArriving = tArriving;
-		priority = prio;
-		completedSubTask = new ArrayList<Cloudlet>();
-		id = _id;
+		for (Subtask st : this) {
+			st.setParent(this);
+			st.setHeight(0);
+		}
 
 		calcHeight();
 	}
 
+	private Task(int _id, int tArriving, int prio) {
+		timeArriving = tArriving;
+		priority = prio;
+		completedSubtasks = new ArrayList<Subtask>();
+		issuedSubtasks = new ArrayList<Subtask>();
+		id = _id;
+	}
+
+	public boolean isComplete() {
+		if (completedSubtasks != null) {
+			if (completedSubtasks.size() == graph.vertexSet().size()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public void setUserId(int _id) {
-		Iterator<SubTask> it = graph.iterator();
+		Iterator<Subtask> it = graph.iterator();
 		while (it.hasNext()) {
 			it.next().setUserId(_id);
 		}
 	}
 
-	public Task(int _id, int tArriving, int prio) {
-		graph = new DirectedAcyclicGraph<SubTask, DefaultEdge>(
-				DefaultEdge.class);
-		timeArriving = tArriving;
-		priority = prio;
-		completedSubTask = new ArrayList<Cloudlet>();
-		id = _id;
-	}
-
-	public void addSubTask(SubTask st) {
+	public void addSubtask(Subtask st) {
 		graph.addVertex(st);
 		st.setParent(this);
 
@@ -117,7 +127,7 @@ public class Task implements Iterable<SubTask> {
 		st.setHeight(0);
 	}
 
-	public boolean addDependency(SubTask src, SubTask dst) {
+	public boolean addDependency(Subtask src, Subtask dst) {
 		try {
 			graph.addDagEdge(src, dst);
 			return true;
@@ -129,7 +139,7 @@ public class Task implements Iterable<SubTask> {
 
 	// calculate the height of all subtasks
 	private void calcHeight() {
-		for (SubTask st : this) {
+		for (Subtask st : this) {
 			for (DefaultEdge edge : graph.incomingEdgesOf(st)) {
 				int srcHeight = graph.getEdgeSource(edge).getHeight();
 				if (st.getHeight() < srcHeight + 1) {
@@ -139,55 +149,59 @@ public class Task implements Iterable<SubTask> {
 		}
 	}
 
-	public boolean complete(SubTask cl) {
-		if (!graph.containsVertex(cl)) {
+	public boolean completed(Subtask st) {
+		if (!graph.containsVertex(st)) {
 			return false;
 		}
-		if (completedSubTask.contains(cl)) {
+		if (completedSubtasks.contains(st)) {
 			return false;
 		}
-		completedSubTask.add(cl);
+		completedSubtasks.add(st);
+		issuedSubtasks.remove(st);
 		return true;
 	}
 
-	public boolean complete(Cloudlet cl) {
-		return complete((SubTask) cl);
+	protected boolean issued(Subtask st) {
+		if (st.getParent() != this) {
+			return false;
+		} else {
+			issuedSubtasks.add(st);
+			return true;
+		}
 	}
 
-	public List<Cloudlet> getRunnableSubtasks() {
+	public List<Subtask> getRunnableSubtasks() {
 
-		List<Cloudlet> runnableSubtasks = new ArrayList<Cloudlet>();
-		Iterator<SubTask> it = graph.iterator();
+		List<Subtask> runnableSubtasks = new ArrayList<Subtask>();
+		Iterator<Subtask> it = graph.iterator();
 
 		while (it.hasNext()) {
-			SubTask st = it.next();
+			Subtask st = it.next();
 
-			if (graph.inDegreeOf(st) == 0) {
-				if (!completedSubTask.contains(st)) {
-					runnableSubtasks.add(st);
-				}
-			} else {
-				if (isReady(st)) {
-					runnableSubtasks.add(st);
-				}
+			if (graph.inDegreeOf(st) == 0 && !completedSubtasks.contains(st)
+					&& !issuedSubtasks.contains(st)) {
+				runnableSubtasks.add(st);
+			} else if (isReady(st)) {
+				runnableSubtasks.add(st);
 			}
+
 		}
 
 		return runnableSubtasks;
 	}
 
-	private boolean isReady(SubTask st) {
+	private boolean isReady(Subtask st) {
 		if (!graph.containsVertex(st)) {
 			return false;
 		}
-		if (completedSubTask.contains(st)) {
+		if (completedSubtasks.contains(st) || issuedSubtasks.contains(st)) {
 			return false;
 		}
 		Set<DefaultEdge> edges = graph.incomingEdgesOf(st);
 		boolean allPrecedentComplete = true;
 		for (DefaultEdge e : edges) {
 			Cloudlet src = graph.getEdgeSource(e);
-			if (!completedSubTask.contains(src)) {
+			if (!completedSubtasks.contains(src)) {
 				allPrecedentComplete = false;
 				break;
 			}
@@ -199,48 +213,17 @@ public class Task implements Iterable<SubTask> {
 		}
 	}
 
-	public List<SubTask> getRunnableSubtasks(SubTask src) {
-
-		List<SubTask> runnableSubtasks = new ArrayList<SubTask>();
-
-		if (!graph.containsVertex(src)) {
-			return null;
-		}
-		if (!completedSubTask.contains(src)) {
-			return null;
-		}
-
-		Set<DefaultEdge> edges = graph.outgoingEdgesOf(src);
-		for (DefaultEdge e : edges) {
-			SubTask dst = graph.getEdgeTarget(e);
-			if (isReady(dst)) {
-				runnableSubtasks.add(dst);
-			}
-		}
-
-		return runnableSubtasks;
-	}
-
-	public List<Cloudlet> getRunnableSubtasks(Cloudlet src) {
-		List<Cloudlet> clResults = new ArrayList<Cloudlet>();
-		List<SubTask> stResults = getRunnableSubtasks((SubTask) src);
-		for (SubTask st : stResults) {
-			clResults.add(st);
-		}
-		return clResults;
-	}
-
 	public String exportGraph() {
-		DOTExporter<SubTask, DefaultEdge> exporter = new DOTExporter<SubTask, DefaultEdge>(
-				new VertexNameProvider<SubTask>() {
+		DOTExporter<Subtask, DefaultEdge> exporter = new DOTExporter<Subtask, DefaultEdge>(
+				new VertexNameProvider<Subtask>() {
 					@Override
-					public String getVertexName(SubTask vertex) {
+					public String getVertexName(Subtask vertex) {
 						return String.valueOf(vertex.getCloudletId());
 					}
-				}, null, null, new ComponentAttributeProvider<SubTask>() {
+				}, null, null, new ComponentAttributeProvider<Subtask>() {
 					@Override
 					public Map<String, String> getComponentAttributes(
-							SubTask component) {
+							Subtask component) {
 						Map<String, String> map = new HashMap<String, String>();
 						map.put(Task.CLOUDLETLENGTH,
 								String.valueOf(component.getCloudletLength()));
@@ -253,26 +236,30 @@ public class Task implements Iterable<SubTask> {
 		return writer.toString();
 	}
 
-	public boolean contains(SubTask v) {
+	public boolean contains(Subtask v) {
 		return graph.containsVertex(v);
 	}
 
 	public boolean contains(Cloudlet v) {
-		return graph.containsVertex((SubTask) v);
+		return graph.containsVertex((Subtask) v);
+	}
+
+	protected List<Subtask> getIssuedSubtask() {
+		return issuedSubtasks;
 	}
 
 	public static Task randomTask(int numV, double probE, int brokerId) {
 
 		Task task = new Task();
-		ArrayList<SubTask> subtasks = new ArrayList<SubTask>();
+		ArrayList<Subtask> subtasks = new ArrayList<Subtask>();
 		Random r = new Random();
 
 		for (int i = 0; i < numV; i++) {
-			SubTask st = new SubTask(i, r.nextInt(MAXIMUMLENGTH));
+			Subtask st = new Subtask(i, r.nextInt(MAXIMUMLENGTH));
 			st.setVmId(-1);
 			st.setUserId(brokerId);
 			subtasks.add(st);
-			task.addSubTask(st);
+			task.addSubtask(st);
 		}
 
 		// create a DAG with a lower triangular matrix
@@ -292,7 +279,7 @@ public class Task implements Iterable<SubTask> {
 	}
 
 	@Override
-	public Iterator<SubTask> iterator() {
+	public Iterator<Subtask> iterator() {
 		return graph.iterator();
 	}
 

@@ -4,16 +4,16 @@ import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.UtilizationModel;
 import org.cloudbus.cloudsim.UtilizationModelFull;
 
-public class SubTask extends Cloudlet {
+public class Subtask extends Cloudlet {
 
 	private static final long DEFAULTFILESIZE = 100;
 	private static final int DEFAULTPESNUMBER = 1;
 	private static final UtilizationModel DEFAULTUTILIZATIONMODEL = new UtilizationModelFull();
 
 	private Task parent;
-	private int height;	
+	private int height;
 
-	public SubTask(int cloudletId, long cloudletLength, int pesNumber,
+	public Subtask(int cloudletId, long cloudletLength, int pesNumber,
 			long cloudletFileSize, long cloudletOutputSize,
 			UtilizationModel utilizationModelCpu,
 			UtilizationModel utilizationModelRam,
@@ -24,19 +24,22 @@ public class SubTask extends Cloudlet {
 		// TODO Auto-generated constructor stub
 	}
 
-	public SubTask(int cloudletId, long cloudletLength) {
+	public Subtask(int cloudletId, long cloudletLength) {
 		super(cloudletId, cloudletLength, DEFAULTPESNUMBER, DEFAULTFILESIZE,
 				DEFAULTFILESIZE, DEFAULTUTILIZATIONMODEL,
 				DEFAULTUTILIZATIONMODEL, DEFAULTUTILIZATIONMODEL);
-
 	}
 
-	public SubTask() {
+	public Subtask() {
 		this(0, 0);
 	}
 
 	public Task getParent() {
 		return parent;
+	}
+
+	public void issued() {
+		getParent().issued(this);
 	}
 
 	public void setParent(Task parent) {
