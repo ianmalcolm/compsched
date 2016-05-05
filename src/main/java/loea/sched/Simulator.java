@@ -6,11 +6,11 @@ import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
 
+import loea.sched.scheduler.SubTaskSchedulerCloudletLevel;
 import loea.sched.scheduler.TaskSchedulerBrokerLevel;
 import loea.sched.task.Task;
 
 import org.cloudbus.cloudsim.Cloudlet;
-import org.cloudbus.cloudsim.CloudletSchedulerSpaceShared;
 import org.cloudbus.cloudsim.Datacenter;
 import org.cloudbus.cloudsim.DatacenterCharacteristics;
 import org.cloudbus.cloudsim.Host;
@@ -77,13 +77,13 @@ public class Simulator {
 
 			// create VM and add the VM to the vmList
 			vmlist.add(new Vm(vmid++, brokerId, mips, pesNumber, ram, bw, size,
-					vmm, new CloudletSchedulerSpaceShared()));
+					vmm, new SubTaskSchedulerCloudletLevel()));
 			vmlist.add(new Vm(vmid++, brokerId, mips, pesNumber, ram, bw, size,
-					vmm, new CloudletSchedulerSpaceShared()));
+					vmm, new SubTaskSchedulerCloudletLevel()));
 			vmlist.add(new Vm(vmid++, brokerId, mips, pesNumber, ram, bw, size,
-					vmm, new CloudletSchedulerSpaceShared()));
+					vmm, new SubTaskSchedulerCloudletLevel()));
 			vmlist.add(new Vm(vmid++, brokerId, mips, pesNumber, ram, bw, size,
-					vmm, new CloudletSchedulerSpaceShared()));
+					vmm, new SubTaskSchedulerCloudletLevel()));
 
 			// submit vm list to the broker
 			broker.submitVmList(vmlist);

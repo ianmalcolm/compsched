@@ -3,11 +3,16 @@ package loea.sched;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import loea.sched.scheduler.TaskScheduler;
+import loea.sched.scheduler.SubTaskScheduler;
+import loea.sched.task.SubTask;
 import loea.sched.task.Task;
 
 import org.cloudbus.cloudsim.Cloudlet;
+import org.cloudbus.cloudsim.CloudletScheduler;
+import org.cloudbus.cloudsim.Consts;
 import org.cloudbus.cloudsim.DatacenterBroker;
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.Vm;
@@ -71,14 +76,24 @@ public class TaskSchedBroker extends DatacenterBroker {
 
 		class VManditsLoad implements Comparable<VManditsLoad> {
 			Vm vm;
-			int load;
+			long load;
 
 			public VManditsLoad(Vm _vm) {
 				vm = _vm;
-				load = vm.getCloudletScheduler().runningCloudlets();
+
+				CloudletScheduler cs = vm.getCloudletScheduler();
+				if (cs instanceof SubTaskScheduler) {
+					Map<SubTask, Long> _loads = ((SubTaskScheduler) cs).getRemainingWorkload();
+					for (long _load : _loads.values()) {
+						load += _load / Consts.MILLION;
+					}
+					
+				} else {
+					throw new UnsupportedOperationException();
+				}
 			}
 
-			public void add(int newload) {
+			public void add(long newload) {
 				load += newload;
 			}
 
@@ -129,7 +144,7 @@ public class TaskSchedBroker extends DatacenterBroker {
 			Collections.sort(vmLoadList);
 			Vm vm = vmLoadList.get(0).vm;
 			submitCloudlet(cloudlet, vm);
-			vmLoadList.get(0).add(1);
+			vmLoadList.get(0).add(cloudlet.getCloudletLength());
 		}
 	}
 
