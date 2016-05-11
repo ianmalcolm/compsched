@@ -39,7 +39,7 @@ public class TaskSchedulerBrokerLevel implements TaskScheduler {
 
 	public void completed(Subtask st) {
 		st.getParent().completed(st);
-		if (st.getParent().isComplete()) {
+		if (st.getParent().isCompleted()) {
 			taskExecList.remove(st.getParent());
 			taskFinishedList.add(st.getParent());
 		}

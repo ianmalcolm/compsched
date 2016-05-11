@@ -1,30 +1,16 @@
 package loea.sched;
 
+
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.TreeMap;
 
 import loea.sched.scheduler.SubTaskSchedulerCloudletLevel;
 import loea.sched.scheduler.TaskSchedulerBrokerLevel;
 import loea.sched.task.Subtask;
 import loea.sched.task.Task;
 
-import org.cloudbus.cloudsim.Cloudlet;
-import org.cloudbus.cloudsim.Datacenter;
-import org.cloudbus.cloudsim.DatacenterCharacteristics;
-import org.cloudbus.cloudsim.Host;
-import org.cloudbus.cloudsim.Log;
-import org.cloudbus.cloudsim.Pe;
-import org.cloudbus.cloudsim.Storage;
-import org.cloudbus.cloudsim.Vm;
-import org.cloudbus.cloudsim.VmAllocationPolicySimple;
-import org.cloudbus.cloudsim.VmSchedulerSpaceShared;
+import org.cloudbus.cloudsim.*;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.provisioners.BwProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.PeProvisionerSimple;
@@ -65,7 +51,7 @@ public class Simulator {
 			Datacenter datacenter0 = createDatacenter("Datacenter_0");
 
 			// Third step: Create Broker
-			TaskSchedBroker broker = createBroker();
+			TaskBroker broker = createBroker();
 			int brokerId = broker.getId();
 
 			// Fourth step: Create one virtual machine
@@ -96,7 +82,7 @@ public class Simulator {
 			// Fifth step: Create an empty task list
 			taskList = new ArrayList<Task>();
 
-			Task t = new Task(0, 0, 0, "tasks/example2.txt");
+			Task t = new Task(0, 0, "configs/example2.txt");
 			t.setUserId(brokerId);
 
 			// add the task to the list
@@ -210,10 +196,10 @@ public class Simulator {
 	 *
 	 * @return the datacenter broker
 	 */
-	private static TaskSchedBroker createBroker() {
-		TaskSchedBroker broker = null;
+	private static TaskBroker createBroker() {
+		TaskBroker broker = null;
 		try {
-			broker = new TaskSchedBroker("Broker",
+			broker = new TaskBroker("Broker",
 					new TaskSchedulerBrokerLevel());
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -228,7 +214,7 @@ public class Simulator {
 	 * @param list
 	 *            list of Cloudlets
 	 */
-	private static void printCloudletList(List<Cloudlet> list) {
+	public static void printCloudletList(List<Cloudlet> list) {
 		int size = list.size();
 		Cloudlet cloudlet;
 
