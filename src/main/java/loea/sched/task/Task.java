@@ -4,17 +4,34 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 
-import org.cloudbus.cloudsim.*;
-import org.jdom2.*;
+import org.cloudbus.cloudsim.Cloudlet;
+import org.cloudbus.cloudsim.UtilizationModel;
+import org.cloudbus.cloudsim.UtilizationModelFull;
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.JDOMException;
 import org.jdom2.filter.Filters;
 import org.jdom2.input.SAXBuilder;
-import org.jdom2.xpath.*;
-
+import org.jdom2.xpath.XPathExpression;
+import org.jdom2.xpath.XPathFactory;
 import org.jgrapht.experimental.dag.DirectedAcyclicGraph;
 import org.jgrapht.experimental.dag.DirectedAcyclicGraph.CycleFoundException;
-import org.jgrapht.ext.*;
+import org.jgrapht.ext.ComponentAttributeProvider;
+import org.jgrapht.ext.EdgeProvider;
+import org.jgrapht.ext.DOTExporter;
+import org.jgrapht.ext.DOTImporter;
+import org.jgrapht.ext.ImportException;
+import org.jgrapht.ext.VertexNameProvider;
+import org.jgrapht.ext.VertexProvider;
 import org.jgrapht.graph.DefaultEdge;
 
 public class Task implements Iterable<Subtask> {
@@ -50,6 +67,19 @@ public class Task implements Iterable<Subtask> {
 			"Subtask[@ref]", Filters.element());
 	private static final XPathExpression<Element> depeExpr = xFactory.compile(
 			"Dependency[@src and @dst]", Filters.element());
+
+	public static final Comparator<Task> arrivalTimeComparator = new Comparator<Task>() {
+		@Override
+		public int compare(Task arg0, Task arg1) {
+			if (arg0.getArrivalTime() < arg1.getArrivalTime()) {
+				return -1;
+			} else if (arg0.getArrivalTime() == arg1.getArrivalTime()) {
+				return 0;
+			} else {
+				return 1;
+			}
+		}
+	};
 
 	/**
 	 * 
@@ -310,6 +340,11 @@ public class Task implements Iterable<Subtask> {
 			for (Element taskEle : taskExpr.evaluate(doc)) {
 
 				Task task = new Task();
+
+				String _ref = taskEle.getAttributeValue("ref");
+				if (_ref != null && !_ref.isEmpty()) {
+					task.setRef(Integer.parseInt(_ref));
+				}
 
 				String arri = taskEle.getChildTextNormalize(ARRIVALTIME);
 				if (arri != null && !arri.isEmpty()) {

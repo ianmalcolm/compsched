@@ -1,5 +1,6 @@
 package loea.sched;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -18,19 +19,89 @@ import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.SimEvent;
 import org.cloudbus.cloudsim.lists.VmList;
 
+/**
+ * @author ian
+ *
+ */
 public class TaskBroker extends DatacenterBroker {
 
 	private final TaskScheduler scheduler;
+	private final static double SCHEDULING_PERIOD = 0.2;
 
-	public TaskBroker(String name, TaskScheduler _scheduler)
-			throws Exception {
+	private List<Task> futureTask;
+
+	public TaskBroker(String name, TaskScheduler _scheduler) throws Exception {
 		super(name);
 		scheduler = _scheduler;
 	}
 
 	public void submitTaskList(List<Task> list) {
+		futureTask = new ArrayList<Task>();
 		for (Task t : list) {
-			scheduler.submitTask(t);
+			if (t.getArrivalTime() <= CloudSim.clock()) {
+				scheduler.submitTask(t);
+			} else {
+				futureTask.add(t);
+			}
+		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see cloudsim.core.SimEntity#startEntity()
+	 */
+	@Override
+	public void startEntity() {
+		Log.printLine(getName() + " is starting...");
+		schedule(getId(), 0, CloudSimTags.RESOURCE_CHARACTERISTICS_REQUEST);
+		for (Task t : futureTask) {
+			send(getId(), t.getArrivalTime() - CloudSim.clock(),
+					CompSchedTags.TASK_INCOMING, t);
+		}
+		futureTask = null;
+	}
+
+	/**
+	 * Processes events available for this Broker.
+	 * 
+	 * @param ev
+	 *            a SimEvent object
+	 * @pre ev != null
+	 * @post $none
+	 */
+	@Override
+	public void processEvent(SimEvent ev) {
+		switch (ev.getTag()) {
+		// Resource characteristics request
+		case CloudSimTags.RESOURCE_CHARACTERISTICS_REQUEST:
+			processResourceCharacteristicsRequest(ev);
+			break;
+		// Resource characteristics answer
+		case CloudSimTags.RESOURCE_CHARACTERISTICS:
+			processResourceCharacteristics(ev);
+			break;
+		// VM Creation answer
+		case CloudSimTags.VM_CREATE_ACK:
+			processVmCreate(ev);
+			break;
+		// A finished cloudlet returned
+		case CloudSimTags.CLOUDLET_RETURN:
+			processCloudletReturn(ev);
+			break;
+		// if the simulation finishes
+		case CloudSimTags.END_OF_SIMULATION:
+			shutdownEntity();
+			break;
+		// Receiving incoming Task
+		case CloudSimTags.EXPERIMENT:
+			CompSchedEvent csEv = new CompSchedEvent(ev);
+			processCompSchedEvent(csEv);
+			break;
+		// other unknown tags are processed by this method
+		default:
+			processOtherEvent(ev);
+			break;
 		}
 	}
 
@@ -56,6 +127,7 @@ public class TaskBroker extends DatacenterBroker {
 		if (!map.isEmpty()) {
 			submitCloudlets(map);
 		}
+		processScheduling();
 	}
 
 	/**
@@ -176,9 +248,9 @@ public class TaskBroker extends DatacenterBroker {
 
 		if (scheduler.isComplete()) { // all subtasks executed
 			Log.printLine(CloudSim.clock() + ": " + getName()
-					+ ": All subtasks executed. Finishing...");
-			clearDatacenters();
-			finishExecution();
+					+ ": All tasks executed. Idle...");
+//			clearDatacenters();
+//			finishExecution();
 		}
 	}
 
@@ -202,6 +274,51 @@ public class TaskBroker extends DatacenterBroker {
 
 	public TaskScheduler getScheduler() {
 		return scheduler;
+	}
+
+	protected void send(int entityId, double delay, CompSchedTags _tags,
+			Object _data) {
+		Object data = CompSchedEvent.createTagDataPair(_tags, _data);
+		send(entityId, delay, CloudSimTags.EXPERIMENT, data);
+	}
+
+	/**
+	 * 
+	 * @param ev
+	 */
+
+	protected void processIncomingTask(CompSchedEvent ev) {
+		Task t = (Task) ev.getData();
+		scheduler.submitTask(t);
+		submitCloudlets();
+	}
+
+	protected void processScheduling(CompSchedEvent ev) {
+//		Log.printLine(CloudSim.clock() + ": " + getName()
+//				+ ": recevie a scheduling request from " + ev.getEntSrc());
+
+		processScheduling();
+	}
+
+	protected void processScheduling() {
+		if (!scheduler.isComplete()) {
+			send(getId(), SCHEDULING_PERIOD, CompSchedTags.SCHEDULING, null);
+		}
+	}
+
+	protected void processCompSchedEvent(CompSchedEvent ev) {
+
+		switch (ev.getTag()) {
+
+		case TASK_INCOMING:
+			processIncomingTask(ev);
+			break;
+		case SCHEDULING:
+			processScheduling(ev);
+			break;
+		default:
+			break;
+		}
 	}
 
 }
