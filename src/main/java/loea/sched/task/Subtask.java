@@ -32,21 +32,12 @@ public class Subtask extends Cloudlet {
 	private Task parent;
 	private int height;
 	private static int ID_COUNT = 0;
-	private int ref = Integer.MIN_VALUE;
-
-	Subtask(long cloudletLength, int pesNumber, long cloudletFileSize,
-			long cloudletOutputSize, UtilizationModel utilizationModelCpu,
-			UtilizationModel utilizationModelRam,
-			UtilizationModel utilizationModelBw) {
-		super(ID_COUNT++, cloudletLength, pesNumber, cloudletFileSize,
-				cloudletOutputSize, utilizationModelCpu, utilizationModelRam,
-				utilizationModelBw);
-	}
+	private final int ref;
 
 	public Subtask(long cloudletLength) {
-		super(ID_COUNT++, cloudletLength, DEFAULTPESNUMBER, DEFAULTFILESIZE,
+		this(Integer.MIN_VALUE,cloudletLength, DEFAULTPESNUMBER, DEFAULTFILESIZE,
 				DEFAULTFILESIZE, DEFAULTUTILIZATIONMODEL,
-				DEFAULTUTILIZATIONMODEL, DEFAULTUTILIZATIONMODEL);
+				DEFAULTUTILIZATIONMODEL, DEFAULTUTILIZATIONMODEL,DEFAULTRECORD,null);
 	}
 
 	public Subtask() {
@@ -102,12 +93,12 @@ public class Subtask extends Cloudlet {
 		if (opSzs != null && !opSzs.isEmpty()) {
 			opSz = Long.parseLong(opSzs);
 		}
-		
+
 		String uCPUs = subtEle.getChildTextNormalize(UTILIZATIONMODELCPU);
 		if (uCPUs != null && !uCPUs.isEmpty()) {
 			uCPU = parseUtilizationModel(uCPUs);
 		}
-		
+
 		String uRAMs = subtEle.getChildTextNormalize(UTILIZATIONMODELRAM);
 		if (uRAMs != null && !uRAMs.isEmpty()) {
 			uRAM = parseUtilizationModel(uRAMs);
@@ -117,12 +108,12 @@ public class Subtask extends Cloudlet {
 		if (uBws != null && !uBws.isEmpty()) {
 			uBw = parseUtilizationModel(uBws);
 		}
-		
+
 		String recds = subtEle.getChildTextNormalize(RECORD);
 		if (recds != null && !recds.isEmpty()) {
 			recd = Boolean.parseBoolean(recds);
 		}
-		
+
 		String fLsts = subtEle.getChildTextNormalize(FILELIST);
 		if (fLsts != null && !fLsts.isEmpty()) {
 
@@ -168,10 +159,6 @@ public class Subtask extends Cloudlet {
 
 	int getRef() {
 		return ref;
-	}
-
-	void setRef(int ref) {
-		this.ref = ref;
 	}
 
 }
