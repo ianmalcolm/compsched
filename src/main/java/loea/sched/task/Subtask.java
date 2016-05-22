@@ -30,14 +30,16 @@ public class Subtask extends Cloudlet {
 	private static final String FILELIST = "fileList";
 
 	private Task parent;
-	private int height;
+	private int height=0;
 	private static int ID_COUNT = 0;
 	private final int ref;
+	private long criticalPathToExit = Long.MIN_VALUE;
 
 	public Subtask(long cloudletLength) {
-		this(Integer.MIN_VALUE,cloudletLength, DEFAULTPESNUMBER, DEFAULTFILESIZE,
-				DEFAULTFILESIZE, DEFAULTUTILIZATIONMODEL,
-				DEFAULTUTILIZATIONMODEL, DEFAULTUTILIZATIONMODEL,DEFAULTRECORD,null);
+		this(Integer.MIN_VALUE, cloudletLength, DEFAULTPESNUMBER,
+				DEFAULTFILESIZE, DEFAULTFILESIZE, DEFAULTUTILIZATIONMODEL,
+				DEFAULTUTILIZATIONMODEL, DEFAULTUTILIZATIONMODEL,
+				DEFAULTRECORD, null);
 	}
 
 	public Subtask() {
@@ -159,6 +161,14 @@ public class Subtask extends Cloudlet {
 
 	int getRef() {
 		return ref;
+	}
+
+	public long getCriticalPathToExit() {
+		return criticalPathToExit;
+	}
+
+	protected void setCriticalPathToExit(long cplen2exit) {
+		this.criticalPathToExit = cplen2exit;
 	}
 
 }
