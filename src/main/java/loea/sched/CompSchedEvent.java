@@ -8,7 +8,7 @@ public class CompSchedEvent {
 	private final double time;
 	private final int entSrc;
 	private final int entDst;
-	private final CompSchedTags tag;
+	private final CompSchedTag tag;
 	private final Object data;
 
 	public int getEtype() {
@@ -27,7 +27,7 @@ public class CompSchedEvent {
 		return entDst;
 	}
 
-	public CompSchedTags getTag() {
+	public CompSchedTag getTag() {
 		return tag;
 	}
 
@@ -45,7 +45,7 @@ public class CompSchedEvent {
 		data = ((TagDataPair) ev.getData()).getData();
 	}
 
-	public static Object createTagDataPair(CompSchedTags _tags, Object _data) {
+	public static Object createTagDataPair(CompSchedTag _tags, Object _data) {
 		TagDataPair pair = new TagDataPair(_tags, _data);
 		return (Object) pair;
 	}
@@ -53,19 +53,19 @@ public class CompSchedEvent {
 
 class TagDataPair {
 
-	CompSchedTags tag;
+	CompSchedTag tag;
 	Object data;
 
-	public TagDataPair(CompSchedTags _tag, Object _data) {
+	public TagDataPair(CompSchedTag _tag, Object _data) {
 		tag = _tag;
 		data = _data;
 	}
 
-	CompSchedTags getTag() {
+	CompSchedTag getTag() {
 		return tag;
 	}
 
-	void setTag(CompSchedTags tag) {
+	void setTag(CompSchedTag tag) {
 		this.tag = tag;
 	}
 

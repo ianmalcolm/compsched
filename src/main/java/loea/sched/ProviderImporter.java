@@ -179,7 +179,7 @@ public class ProviderImporter {
 						arch, os, vmm, hostList, time_zone, cost, costPerMem,
 						costPerStorage, costPerBw);
 
-				Datacenter datacenter = new Datacenter("Datacenter_"
+				InteractiveDatacenter datacenter = new InteractiveDatacenter("Datacenter_"
 						+ centerList.size(), characteristics,
 						new VmAllocationPolicySimple(hostList), storageList, 0);
 

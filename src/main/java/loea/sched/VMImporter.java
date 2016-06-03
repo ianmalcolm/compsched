@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import loea.sched.scheduler.SubTaskSchedulerCloudletLevel;
+import loea.sched.scheduler.SubtaskSchedulerTimeShared;
 
 import org.cloudbus.cloudsim.CloudletScheduler;
 import org.cloudbus.cloudsim.CloudletSchedulerSpaceShared;
@@ -106,7 +106,7 @@ public class VMImporter {
 		} else if (s.compareTo("CloudletSchedulerTimeShared") == 0) {
 			return new CloudletSchedulerTimeShared();
 		} else if (s.compareTo("SubTaskSchedulerCloudletLevel") == 0) {
-			return new SubTaskSchedulerCloudletLevel();
+			return new SubtaskSchedulerTimeShared();
 		} else {
 			return new CloudletSchedulerTimeShared();
 		}

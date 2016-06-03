@@ -5,8 +5,8 @@ import java.text.DecimalFormat;
 import java.util.*;
 import java.util.Map.Entry;
 
-import loea.sched.scheduler.SubTaskSchedulerCloudletLevel;
-import loea.sched.scheduler.TaskSchedulerBrokerLevel;
+import loea.sched.scheduler.SubtaskSchedulerTimeShared;
+import loea.sched.scheduler.TaskScheduler;
 import loea.sched.task.Subtask;
 import loea.sched.task.Task;
 
@@ -51,7 +51,7 @@ public class Simulator {
 			Datacenter datacenter0 = createDatacenter("Datacenter_0");
 
 			// Third step: Create Broker
-			TaskBroker broker = createBroker();
+			TaskScheduler broker = createBroker();
 			int brokerId = broker.getId();
 
 			// Fourth step: Create one virtual machine
@@ -68,13 +68,13 @@ public class Simulator {
 
 			// create VM and add the VM to the vmList
 			vmlist.add(new Vm(vmid++, brokerId, mips, pesNumber, ram, bw, size,
-					vmm, new SubTaskSchedulerCloudletLevel()));
+					vmm, new SubtaskSchedulerTimeShared()));
 			vmlist.add(new Vm(vmid++, brokerId, mips, pesNumber, ram, bw, size,
-					vmm, new SubTaskSchedulerCloudletLevel()));
+					vmm, new SubtaskSchedulerTimeShared()));
 			vmlist.add(new Vm(vmid++, brokerId, mips, pesNumber, ram, bw, size,
-					vmm, new SubTaskSchedulerCloudletLevel()));
+					vmm, new SubtaskSchedulerTimeShared()));
 			vmlist.add(new Vm(vmid++, brokerId, mips, pesNumber, ram, bw, size,
-					vmm, new SubTaskSchedulerCloudletLevel()));
+					vmm, new SubtaskSchedulerTimeShared()));
 
 			// submit vm list to the broker
 			broker.submitVmList(vmlist);
@@ -196,11 +196,11 @@ public class Simulator {
 	 *
 	 * @return the datacenter broker
 	 */
-	private static TaskBroker createBroker() {
-		TaskBroker broker = null;
+	private static TaskScheduler createBroker() {
+		TaskScheduler broker = null;
 		try {
-			broker = new TaskBroker("Broker",
-					new TaskSchedulerBrokerLevel());
+			broker = new TaskScheduler("Broker"
+					);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
