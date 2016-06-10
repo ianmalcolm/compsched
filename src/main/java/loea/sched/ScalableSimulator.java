@@ -3,7 +3,7 @@ package loea.sched;
 import java.util.Calendar;
 import java.util.List;
 
-import loea.sched.scheduler.TaskScheduler;
+import loea.sched.scheduler.TaskBroker;
 import loea.sched.task.Subtask;
 import loea.sched.task.Task;
 
@@ -32,7 +32,7 @@ public class ScalableSimulator {
 			List<Datacenter> centerList = ProviderImporter
 					.XMLImporter("configs/provider1.xml");
 
-			TaskScheduler broker = new TaskScheduler("TaskBroker");
+			TaskBroker broker = new TaskBroker("TaskBroker");
 
 			// VM XMLImporter
 			List<Vm> vmList = VMImporter.XMLImporter("configs/customer1.xml",

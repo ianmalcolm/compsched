@@ -35,7 +35,6 @@ public class InteractiveDatacenter extends Datacenter {
 			double schedulingInterval) throws Exception {
 		super(name, characteristics, vmAllocationPolicy, storageList,
 				schedulingInterval);
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override
@@ -54,16 +53,23 @@ public class InteractiveDatacenter extends Datacenter {
 	protected void processCompSchedEvent(CompSchedEvent ev) {
 
 		switch (ev.getTag()) {
-
-		case TASK_INCOMING:
-
-			break;
 		case PERIODIC_TASK_SCHEDULING:
-
+			send(ev.getEntSrc(), 0, CompSchedTag.SUBMIT_NEW_SUBTASKS,
+					getHostList());
+			break;
+		case SUBMIT_NEW_SUBTASKS:
+			send(ev.getEntSrc(), 0, CompSchedTag.SUBMIT_NEW_SUBTASKS,
+					getHostList());
 			break;
 		default:
 			throw new UnsupportedOperationException();
 		}
+	}
+
+	protected void send(int entityId, double delay, CompSchedTag _tags,
+			Object _data) {
+		Object data = CompSchedEvent.createTagDataPair(_tags, _data);
+		send(entityId, delay, CloudSimTags.EXPERIMENT, data);
 	}
 
 }
