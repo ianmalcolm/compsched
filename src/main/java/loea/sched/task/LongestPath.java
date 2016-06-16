@@ -11,8 +11,8 @@ import java.util.Set;
 import org.jgrapht.experimental.dag.DirectedAcyclicGraph;
 
 /**
- * An implementation of <a
- * href="https://en.wikipedia.org/wiki/Longest_path_problem">Longest path
+ * An implementation of
+ * <a href="https://en.wikipedia.org/wiki/Longest_path_problem">Longest path
  * algorithm</a> based on <code>DijkstraShortestPath</code> and
  * <code>ClosestFirstIterator</code> implementations in jgrapht.
  *
@@ -41,8 +41,7 @@ public class LongestPath<V, E> {
 		graph = _graph;
 
 		if (graph.vertexSet().isEmpty()) {
-			throw new IllegalArgumentException(
-					"graph must contain at least one vertex");
+			throw new IllegalArgumentException("graph must contain at least one vertex");
 		}
 
 		DAGEdgeIterator<V, E> iter = new DAGEdgeIterator<V, E>(graph);
@@ -65,8 +64,7 @@ public class LongestPath<V, E> {
 		QueueEntry<E> dstQe = map.get(graph.getEdgeTarget(e));
 		double preLen = dstQe == null ? 0 : dstQe.length;
 
-		QueueEntry<E> curQe = new QueueEntry<E>(e, graph.getEdgeWeight(e)
-				+ preLen);
+		QueueEntry<E> curQe = new QueueEntry<E>(e, graph.getEdgeWeight(e) + preLen);
 		map.put(v, curQe);
 	}
 
@@ -76,8 +74,7 @@ public class LongestPath<V, E> {
 		double preLen = dstQe == null ? 0 : dstQe.length;
 
 		if (map.get(v).length < preLen + graph.getEdgeWeight(e)) {
-			QueueEntry<E> curQe = new QueueEntry<E>(e, graph.getEdgeWeight(e)
-					+ preLen);
+			QueueEntry<E> curQe = new QueueEntry<E>(e, graph.getEdgeWeight(e) + preLen);
 			map.put(v, curQe);
 		}
 	}
@@ -120,12 +117,12 @@ class DAGEdgeIterator<V, E> implements Iterator<E> {
 
 	public DAGEdgeIterator(DirectedAcyclicGraph<V, E> _graph) {
 
-		if (_graph.vertexSet().isEmpty()) {
-			throw new IllegalArgumentException(
-					"graph must contain at least one vertex.");
+		graph = _graph;
+
+		if (graph.vertexSet().isEmpty()) {
+			throw new IllegalArgumentException("graph must contain at least one vertex.");
 		}
 
-		graph = _graph;
 		for (V v : graph.vertexSet()) {
 			if (graph.outDegreeOf(v) == 0) {
 				unvisited.addAll(graph.incomingEdgesOf(v));
@@ -150,7 +147,7 @@ class DAGEdgeIterator<V, E> implements Iterator<E> {
 		V v = graph.getEdgeSource(e);
 		unvisited.addAll(graph.incomingEdgesOf(v));
 		unvisited.removeAll(visited);
-
+//		System.out.println(visited.size() + "/" + graph.edgeSet().size());
 		return e;
 	}
 

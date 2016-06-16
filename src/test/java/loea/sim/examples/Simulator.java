@@ -1,4 +1,4 @@
-package loea.sched;
+package loea.sim.examples;
 
 
 import java.text.DecimalFormat;

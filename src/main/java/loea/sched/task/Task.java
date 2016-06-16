@@ -1,16 +1,13 @@
 package loea.sched.task;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 
 import org.cloudbus.cloudsim.Cloudlet;
@@ -26,12 +23,9 @@ import org.jdom2.xpath.XPathFactory;
 import org.jgrapht.Graph;
 import org.jgrapht.experimental.dag.DirectedAcyclicGraph;
 import org.jgrapht.experimental.dag.DirectedAcyclicGraph.CycleFoundException;
-import org.jgrapht.ext.ComponentAttributeProvider;
 import org.jgrapht.ext.EdgeProvider;
-import org.jgrapht.ext.DOTExporter;
 import org.jgrapht.ext.DOTImporter;
 import org.jgrapht.ext.ImportException;
-import org.jgrapht.ext.VertexNameProvider;
 import org.jgrapht.ext.VertexProvider;
 import org.jgrapht.graph.DefaultEdge;
 
@@ -57,7 +51,8 @@ public class Task implements Iterable<Subtask> {
 	public static final long DEFAULTFILESIZE = 100;
 	public static final int DEFAULTPESNUMBER = 1;
 	public static final UtilizationModel DEFAULTUTILIZATIONMODEL = new UtilizationModelFull();
-	public static final int MAXIMUMLENGTH = 1000000;
+	public static final int MAXIMUMLENGTH = (int) 1e6;
+	public static final int MINIMUMLENGTH = (int) 1e2;
 	public static final String CLOUDLETLENGTH = "Length";
 
 	protected final List<Subtask> completedSubtasks;
@@ -94,8 +89,7 @@ public class Task implements Iterable<Subtask> {
 		public int compare(Subtask arg0, Subtask arg1) {
 			if (arg0.getCriticalPathToExit() < arg1.getCriticalPathToExit()) {
 				return -1;
-			} else if (arg0.getCriticalPathToExit() == arg1
-					.getCriticalPathToExit()) {
+			} else if (arg0.getCriticalPathToExit() == arg1.getCriticalPathToExit()) {
 				return 0;
 			} else {
 				return 1;
@@ -117,16 +111,14 @@ public class Task implements Iterable<Subtask> {
 		DOTImporter<Subtask, DefaultEdge> importer = new DOTImporter<Subtask, DefaultEdge>(
 				new VertexProvider<Subtask>() {
 					@Override
-					public Subtask buildVertex(String label,
-							Map<String, String> attributes) {
-						long length = Long.parseLong(attributes
-								.get(Task.CLOUDLETLENGTH));
+					public Subtask buildVertex(String label, Map<String, String> attributes) {
+						long length = Long.parseLong(attributes.get(Task.CLOUDLETLENGTH));
 						return new Subtask(length);
 					}
 				}, new EdgeProvider<Subtask, DefaultEdge>() {
 					@Override
-					public DefaultEdge buildEdge(Subtask from, Subtask to,
-							String label, Map<String, String> attributes) {
+					public DefaultEdge buildEdge(Subtask from, Subtask to, String label,
+							Map<String, String> attributes) {
 						return new DefaultEdge();
 					}
 				}, null);
@@ -274,8 +266,7 @@ public class Task implements Iterable<Subtask> {
 			}
 		}
 
-		LongestPath<Subtask, DefaultEdge> lp = new LongestPath<Subtask, DefaultEdge>(
-				tempGraph);
+		LongestPath<Subtask, DefaultEdge> lp = new LongestPath<Subtask, DefaultEdge>(tempGraph);
 
 		for (Subtask st : graph.vertexSet()) {
 			long cplen = (long) lp.getPathLength(st);
@@ -342,29 +333,6 @@ public class Task implements Iterable<Subtask> {
 		}
 	}
 
-	public String exportGraph() {
-		DOTExporter<Subtask, DefaultEdge> exporter = new DOTExporter<Subtask, DefaultEdge>(
-				new VertexNameProvider<Subtask>() {
-					@Override
-					public String getVertexName(Subtask vertex) {
-						return String.valueOf(vertex.getCloudletId());
-					}
-				}, null, null, new ComponentAttributeProvider<Subtask>() {
-					@Override
-					public Map<String, String> getComponentAttributes(
-							Subtask component) {
-						Map<String, String> map = new HashMap<String, String>();
-						map.put(Task.CLOUDLETLENGTH,
-								String.valueOf(component.getCloudletLength()));
-						return map;
-					}
-				}, null);
-
-		StringWriter writer = new StringWriter();
-		exporter.export(writer, this.graph);
-		return writer.toString();
-	}
-
 	public boolean contains(Subtask v) {
 		return graph.containsVertex(v);
 	}
@@ -377,48 +345,15 @@ public class Task implements Iterable<Subtask> {
 		return issuedSubtasks;
 	}
 
-	public static Task randomTask(int numV, double probE, int brokerId) {
-
-		Task task = new Task();
-		ArrayList<Subtask> subtasks = new ArrayList<Subtask>();
-		Random r = new Random();
-
-		for (int i = 0; i < numV; i++) {
-			Subtask st = new Subtask(r.nextInt(MAXIMUMLENGTH) + 200);
-			st.setVmId(-1);
-			st.setUserId(brokerId);
-			subtasks.add(st);
-			task.addSubtask(st);
-		}
-
-		// create a DAG with a lower triangular matrix
-		for (int i = 0; i < numV; i++) {
-			for (int j = 0; j < i; j++) {
-				double dice = r.nextDouble();
-				if (dice < probE) {
-					task.addDependency(subtasks.get(j), subtasks.get(i));
-				}
-			}
-		}
-
-		task.calcHeight();
-
-		return task;
-
-	}
-
 	public static List<Task> XMLImporter(String file) {
 
 		final XPathFactory xFactory = XPathFactory.instance();
 		final SAXBuilder builder = new SAXBuilder();
-		final XPathExpression<Element> taskExpr = xFactory.compile(
-				"/Customer/Task[@ref]", Filters.element());
+		final XPathExpression<Element> taskExpr = xFactory.compile("/Customer/Task[@ref]", Filters.element());
 		final String ARRIVALTIME = "arrivalTime";
 		final String DEADLINE = "deadline";
-		final XPathExpression<Element> subtExpr = xFactory.compile(
-				"Subtask[@ref]", Filters.element());
-		final XPathExpression<Element> depeExpr = xFactory.compile(
-				"Dependency[@src and @dst]", Filters.element());
+		final XPathExpression<Element> subtExpr = xFactory.compile("Subtask[@ref]", Filters.element());
+		final XPathExpression<Element> depeExpr = xFactory.compile("Dependency[@src and @dst]", Filters.element());
 
 		List<Task> taskList = new ArrayList<Task>();
 

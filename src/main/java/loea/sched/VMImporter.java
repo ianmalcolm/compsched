@@ -105,10 +105,10 @@ public class VMImporter {
 			return new CloudletSchedulerSpaceShared();
 		} else if (s.compareTo("CloudletSchedulerTimeShared") == 0) {
 			return new CloudletSchedulerTimeShared();
-		} else if (s.compareTo("SubTaskSchedulerCloudletLevel") == 0) {
+		} else if (s.compareTo("SubtaskScheduler") == 0) {
 			return new SubtaskScheduler();
 		} else {
-			return new CloudletSchedulerTimeShared();
+			return new SubtaskScheduler();
 		}
 	}
 }
