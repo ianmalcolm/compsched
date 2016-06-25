@@ -11,7 +11,7 @@ public class LongestPathTest extends TaskTest {
 	@Test
 	public void performanceTest() {
 
-		List<Task> tasks = Task.XMLImporter("configs/cust_s1_t1_st1000_dep.1.xml");
+		List<Task> tasks = Task.XMLImporter("configs/task_s1_t1_st1000.xml");
 		Task task = tasks.get(0);
 		task.calcCriticalPathLength();
 

@@ -1,6 +1,7 @@
-package loea.sim.examples;
+package loea.sched.simulator;
 
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import loea.sched.ProviderImporter;
 import loea.sched.VMImporter;
@@ -88,16 +89,19 @@ public class ScalableSimulator {
 			}
 			broker.submitTaskList(taskList);
 
+			Date start = new Date();
 			// Starts the simulation
 			CloudSim.startSimulation();
 
 			CloudSim.stopSimulation();
+			Date end = new Date();
 
 			// Final step: Print results when simulation is over
 			List<Cloudlet> newList = broker.getCloudletReceivedList();
 			Simulator.printCloudletList(newList);
 
 			Log.printLine("Scalable Simulator finished!");
+			Log.printLine("Time elapsed: "+((end.getTime()-start.getTime())/1000.0));
 		} catch (Exception e) {
 			e.printStackTrace();
 			Log.printLine("Unwanted errors happen");

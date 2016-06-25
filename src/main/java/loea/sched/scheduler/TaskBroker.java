@@ -41,6 +41,8 @@ public class TaskBroker extends DatacenterBroker {
 	private final List<Task> futureTask = new ArrayList<Task>();
 
 	private final List<SchedulingRequest> schedulingRequests = new ArrayList<SchedulingRequest>();
+	
+//	private int vmId = 0;
 
 	public TaskBroker(String name) throws Exception {
 		super(name);
@@ -174,16 +176,15 @@ public class TaskBroker extends DatacenterBroker {
 			map.put(st, _vmList.get(0));
 		}
 
-		// int vmId = 0;
-		// int subtaskId = 0;
-		// Map<Subtask, Vm> map = new HashMap<Subtask, Vm>();
-		//
-		// while (map.size() < subtasks.size()) {
-		// map.put(subtasks.get(subtaskId++), vmList.get(vmId++));
-		// if (vmId >= vmList.size()) {
-		// vmId = 0;
-		// }
-		// }
+//		 int subtaskId = 0;
+//		 Map<Subtask, Vm> map = new HashMap<Subtask, Vm>();
+//		
+//		 while (map.size() < subtasks.size()) {
+//		 map.put(subtasks.get(subtaskId++), vmList.get(vmId++));
+//		 if (vmId >= vmList.size()) {
+//		 vmId = 0;
+//		 }
+//		 }
 
 		return map;
 	}

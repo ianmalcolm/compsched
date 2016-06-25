@@ -1,0 +1,43 @@
+python TaskGenerator.py -s 01 -t 1 -v 1000 -e 10000 -l 1e3,1e4 > configs/task_s01_t1_st1000_e10000.xml
+python TaskGenerator.py -s 02 -t 1 -v 1000 -e 10000 -l 1e3,1e4 > configs/task_s02_t1_st1000_e10000.xml
+python TaskGenerator.py -s 03 -t 1 -v 1000 -e 10000 -l 1e3,1e4 > configs/task_s03_t1_st1000_e10000.xml
+python TaskGenerator.py -s 04 -t 1 -v 1000 -e 10000 -l 1e3,1e4 > configs/task_s04_t1_st1000_e10000.xml
+python TaskGenerator.py -s 05 -t 1 -v 1000 -e 10000 -l 1e3,1e4 > configs/task_s05_t1_st1000_e10000.xml
+python TaskGenerator.py -s 06 -t 1 -v 1000 -e 10000 -l 1e3,1e4 > configs/task_s06_t1_st1000_e10000.xml
+python TaskGenerator.py -s 07 -t 1 -v 1000 -e 10000 -l 1e3,1e4 > configs/task_s07_t1_st1000_e10000.xml
+python TaskGenerator.py -s 08 -t 1 -v 1000 -e 10000 -l 1e3,1e4 > configs/task_s08_t1_st1000_e10000.xml
+python TaskGenerator.py -s 09 -t 1 -v 1000 -e 10000 -l 1e3,1e4 > configs/task_s09_t1_st1000_e10000.xml
+python TaskGenerator.py -s 10 -t 1 -v 1000 -e 10000 -l 1e3,1e4 > configs/task_s10_t1_st1000_e10000.xml
+
+python TaskGenerator.py -s 01 -t 1 -v 2000 -e 10000 -l 1e3,1e4 > configs/task_s01_t1_st2000_e10000.xml
+python TaskGenerator.py -s 02 -t 1 -v 2000 -e 10000 -l 1e3,1e4 > configs/task_s02_t1_st2000_e10000.xml
+python TaskGenerator.py -s 03 -t 1 -v 2000 -e 10000 -l 1e3,1e4 > configs/task_s03_t1_st2000_e10000.xml
+python TaskGenerator.py -s 04 -t 1 -v 2000 -e 10000 -l 1e3,1e4 > configs/task_s04_t1_st2000_e10000.xml
+python TaskGenerator.py -s 05 -t 1 -v 2000 -e 10000 -l 1e3,1e4 > configs/task_s05_t1_st2000_e10000.xml
+python TaskGenerator.py -s 06 -t 1 -v 2000 -e 10000 -l 1e3,1e4 > configs/task_s06_t1_st2000_e10000.xml
+python TaskGenerator.py -s 07 -t 1 -v 2000 -e 10000 -l 1e3,1e4 > configs/task_s07_t1_st2000_e10000.xml
+python TaskGenerator.py -s 08 -t 1 -v 2000 -e 10000 -l 1e3,1e4 > configs/task_s08_t1_st2000_e10000.xml
+python TaskGenerator.py -s 09 -t 1 -v 2000 -e 10000 -l 1e3,1e4 > configs/task_s09_t1_st2000_e10000.xml
+python TaskGenerator.py -s 10 -t 1 -v 2000 -e 10000 -l 1e3,1e4 > configs/task_s10_t1_st2000_e10000.xml
+
+python TaskGenerator.py -s 01 -t 1 -v 4000 -e 10000 -l 1e3,1e4 > configs/task_s01_t1_st4000_e10000.xml
+python TaskGenerator.py -s 02 -t 1 -v 4000 -e 10000 -l 1e3,1e4 > configs/task_s02_t1_st4000_e10000.xml
+python TaskGenerator.py -s 03 -t 1 -v 4000 -e 10000 -l 1e3,1e4 > configs/task_s03_t1_st4000_e10000.xml
+python TaskGenerator.py -s 04 -t 1 -v 4000 -e 10000 -l 1e3,1e4 > configs/task_s04_t1_st4000_e10000.xml
+python TaskGenerator.py -s 05 -t 1 -v 4000 -e 10000 -l 1e3,1e4 > configs/task_s05_t1_st4000_e10000.xml
+python TaskGenerator.py -s 06 -t 1 -v 4000 -e 10000 -l 1e3,1e4 > configs/task_s06_t1_st4000_e10000.xml
+python TaskGenerator.py -s 07 -t 1 -v 4000 -e 10000 -l 1e3,1e4 > configs/task_s07_t1_st4000_e10000.xml
+python TaskGenerator.py -s 08 -t 1 -v 4000 -e 10000 -l 1e3,1e4 > configs/task_s08_t1_st4000_e10000.xml
+python TaskGenerator.py -s 09 -t 1 -v 4000 -e 10000 -l 1e3,1e4 > configs/task_s09_t1_st4000_e10000.xml
+python TaskGenerator.py -s 10 -t 1 -v 4000 -e 10000 -l 1e3,1e4 > configs/task_s10_t1_st4000_e10000.xml
+
+python TaskGenerator.py -s 01 -t 1 -v 8000 -e 10000 -l 1e3,1e4 > configs/task_s01_t1_st8000_e10000.xml
+python TaskGenerator.py -s 02 -t 1 -v 8000 -e 10000 -l 1e3,1e4 > configs/task_s02_t1_st8000_e10000.xml
+python TaskGenerator.py -s 03 -t 1 -v 8000 -e 10000 -l 1e3,1e4 > configs/task_s03_t1_st8000_e10000.xml
+python TaskGenerator.py -s 04 -t 1 -v 8000 -e 10000 -l 1e3,1e4 > configs/task_s04_t1_st8000_e10000.xml
+python TaskGenerator.py -s 05 -t 1 -v 8000 -e 10000 -l 1e3,1e4 > configs/task_s05_t1_st8000_e10000.xml
+python TaskGenerator.py -s 06 -t 1 -v 8000 -e 10000 -l 1e3,1e4 > configs/task_s06_t1_st8000_e10000.xml
+python TaskGenerator.py -s 07 -t 1 -v 8000 -e 10000 -l 1e3,1e4 > configs/task_s07_t1_st8000_e10000.xml
+python TaskGenerator.py -s 08 -t 1 -v 8000 -e 10000 -l 1e3,1e4 > configs/task_s08_t1_st8000_e10000.xml
+python TaskGenerator.py -s 09 -t 1 -v 8000 -e 10000 -l 1e3,1e4 > configs/task_s09_t1_st8000_e10000.xml
+python TaskGenerator.py -s 10 -t 1 -v 8000 -e 10000 -l 1e3,1e4 > configs/task_s10_t1_st8000_e10000.xml
