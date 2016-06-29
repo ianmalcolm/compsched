@@ -5,6 +5,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +37,9 @@ import org.jgrapht.graph.DefaultEdge;
  */
 public class Task implements Iterable<Subtask> {
 
-	private final DirectedAcyclicGraph<Subtask, DefaultEdge> graph = new DirectedAcyclicGraph<Subtask, DefaultEdge>(
+	private Map<Integer, Subtask> subtasks = new HashMap<Integer, Subtask>();
+	private Map<Integer, Long> longestPathes = new HashMap<Integer, Long>();
+	private DirectedAcyclicGraph<Integer, DefaultEdge> graph = new DirectedAcyclicGraph<Integer, DefaultEdge>(
 			DefaultEdge.class);
 
 	private double arrivalTime = 0;
@@ -55,8 +59,8 @@ public class Task implements Iterable<Subtask> {
 	public static final int MINIMUMLENGTH = (int) 1e2;
 	public static final String CLOUDLETLENGTH = "Length";
 
-	protected final List<Subtask> completedSubtasks;
-	protected final List<Subtask> issuedSubtasks;
+	protected final Set<Integer> completedSubtasks;
+	protected final Set<Integer> issuedSubtasks;
 
 	public static final Comparator<Task> arrivalTimeComparator = new Comparator<Task>() {
 		@Override
@@ -108,16 +112,18 @@ public class Task implements Iterable<Subtask> {
 
 		this(tArriving, prio);
 
-		DOTImporter<Subtask, DefaultEdge> importer = new DOTImporter<Subtask, DefaultEdge>(
-				new VertexProvider<Subtask>() {
+		DOTImporter<Integer, DefaultEdge> importer = new DOTImporter<Integer, DefaultEdge>(
+				new VertexProvider<Integer>() {
 					@Override
-					public Subtask buildVertex(String label, Map<String, String> attributes) {
+					public Integer buildVertex(String label, Map<String, String> attributes) {
 						long length = Long.parseLong(attributes.get(Task.CLOUDLETLENGTH));
-						return new Subtask(length);
+						Subtask st = new Subtask(length);
+						subtasks.put(st.getRef(), st);
+						return st.getRef();
 					}
-				}, new EdgeProvider<Subtask, DefaultEdge>() {
+				}, new EdgeProvider<Integer, DefaultEdge>() {
 					@Override
-					public DefaultEdge buildEdge(Subtask from, Subtask to, String label,
+					public DefaultEdge buildEdge(Integer from, Integer to, String label,
 							Map<String, String> attributes) {
 						return new DefaultEdge();
 					}
@@ -143,8 +149,8 @@ public class Task implements Iterable<Subtask> {
 	private Task(int tArriving, int prio) {
 		arrivalTime = tArriving;
 		priority = prio;
-		completedSubtasks = new ArrayList<Subtask>();
-		issuedSubtasks = new ArrayList<Subtask>();
+		completedSubtasks = new HashSet<Integer>();
+		issuedSubtasks = new HashSet<Integer>();
 		id = ID_COUNT++;
 	}
 
@@ -158,21 +164,21 @@ public class Task implements Iterable<Subtask> {
 	}
 
 	public void setUserId(int _id) {
-		Iterator<Subtask> it = graph.iterator();
-		while (it.hasNext()) {
-			it.next().setUserId(_id);
-		}
+		for (Subtask st : subtasks.values())
+			st.setUserId(_id);
 	}
 
 	public void addSubtask(Subtask st) {
-		graph.addVertex(st);
+		graph.addVertex(st.getRef());
+		subtasks.put(st.getRef(), st);
 		st.setParent(this);
 		st.setHeight(0);
+
 	}
 
 	public boolean addDependency(Subtask src, Subtask dst) {
 		try {
-			graph.addDagEdge(src, dst);
+			graph.addDagEdge(src.getRef(), dst.getRef());
 			return true;
 		} catch (CycleFoundException e) {
 			e.printStackTrace();
@@ -180,30 +186,23 @@ public class Task implements Iterable<Subtask> {
 		}
 	}
 
-	private boolean addDependency(int srcRef, int dstRef) {
-		Subtask src = findSubtaskbyRef(srcRef);
-		Subtask dst = findSubtaskbyRef(dstRef);
-		if (src != null && dst != null) {
-			return addDependency(src, dst);
-		} else {
+	public boolean addDependency(int src, int dst) {
+		try {
+			graph.addDagEdge(src, dst);
+			return true;
+		} catch (CycleFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 			return false;
 		}
-	}
-
-	private Subtask findSubtaskbyRef(int _stRef) {
-		for (Subtask st : this) {
-			if (st.getRef() == _stRef) {
-				return st;
-			}
-		}
-		return null;
 	}
 
 	// calculate the height of all subtasks
 	public void calcHeight() {
 		for (Subtask st : this) {
-			for (DefaultEdge edge : graph.incomingEdgesOf(st)) {
-				int srcHeight = graph.getEdgeSource(edge).getHeight();
+			for (DefaultEdge edge : graph.incomingEdgesOf(st.getRef())) {
+				Subtask srcSt = subtasks.get(graph.getEdgeSource(edge));
+				int srcHeight = srcSt.getHeight();
 				if (st.getHeight() < srcHeight + 1) {
 					st.setHeight(srcHeight + 1);
 				}
@@ -217,11 +216,13 @@ public class Task implements Iterable<Subtask> {
 	 */
 	public void calcCriticalPathLength() {
 
-		DirectedAcyclicGraph<Subtask, DefaultEdge> tempGraph = new DirectedAcyclicGraph<Subtask, DefaultEdge>(
+		Map<Integer, Subtask> tempTasks = new HashMap<Integer, Subtask>();
+
+		DirectedAcyclicGraph<Integer, DefaultEdge> tempGraph = new DirectedAcyclicGraph<Integer, DefaultEdge>(
 				DefaultEdge.class) {
 			/**
-					 * 
-					 */
+			* 
+			*/
 			private static final long serialVersionUID = 5689924817978034026L;
 
 			/**
@@ -229,17 +230,17 @@ public class Task implements Iterable<Subtask> {
 			 */
 			@Override
 			public double getEdgeWeight(DefaultEdge e) {
-				return getEdgeSource(e).getCloudletLength();
-			}
+				Subtask srcSt = tempTasks.get(getEdgeSource(e));
+				return srcSt.getCloudletLength();
+			};
 		};
-
 		// duplicate graph
-		for (Subtask st : graph.vertexSet()) {
+		for (int st : graph.vertexSet()) {
 			tempGraph.addVertex(st);
 		}
 		for (DefaultEdge e : graph.edgeSet()) {
-			Subtask src = graph.getEdgeSource(e);
-			Subtask dst = graph.getEdgeTarget(e);
+			int src = graph.getEdgeSource(e);
+			int dst = graph.getEdgeTarget(e);
 			try {
 				tempGraph.addDagEdge(src, dst);
 			} catch (CycleFoundException e1) {
@@ -247,43 +248,43 @@ public class Task implements Iterable<Subtask> {
 				e1.printStackTrace();
 			}
 		}
+		tempTasks.putAll(subtasks);
 
 		// add dummy exit
-		List<Subtask> realExitList = new ArrayList<Subtask>();
-		for (Subtask st : tempGraph.vertexSet()) {
+		List<Integer> realExitList = new ArrayList<Integer>();
+		for (int st : tempGraph.vertexSet()) {
 			if (tempGraph.outDegreeOf(st) == 0) {
 				realExitList.add(st);
 			}
 		}
 		Subtask dummyExit = new Subtask(0);
-		tempGraph.addVertex(dummyExit);
-		for (Subtask realExit : realExitList) {
+		tempGraph.addVertex(dummyExit.getRef());
+		for (int realExit : realExitList) {
 			try {
-				tempGraph.addDagEdge(realExit, dummyExit);
+				tempGraph.addDagEdge(realExit, dummyExit.getRef());
 			} catch (CycleFoundException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 		}
 
-		LongestPath<Subtask, DefaultEdge> lp = new LongestPath<Subtask, DefaultEdge>(tempGraph);
+		LongestPath<Integer, DefaultEdge> lp = new LongestPath<Integer, DefaultEdge>(tempGraph);
 
-		for (Subtask st : graph.vertexSet()) {
+		for (int st : graph.vertexSet()) {
 			long cplen = (long) lp.getPathLength(st);
-			st.setCriticalPathToExit(cplen);
+			longestPathes.put(st, cplen);
 		}
-
 	}
 
 	public boolean completed(Subtask st) {
-		if (!graph.containsVertex(st)) {
+		if (!graph.containsVertex(st.getRef())) {
 			return false;
 		}
-		if (completedSubtasks.contains(st)) {
+		if (completedSubtasks.contains(st.getRef())) {
 			return false;
 		}
-		completedSubtasks.add(st);
-		issuedSubtasks.remove(st);
+		completedSubtasks.add(st.getRef());
+		issuedSubtasks.remove(Integer.valueOf(st.getRef()));
 		return true;
 	}
 
@@ -291,7 +292,7 @@ public class Task implements Iterable<Subtask> {
 		if (st.getParent() != this) {
 			return false;
 		} else {
-			issuedSubtasks.add(st);
+			issuedSubtasks.add(st.getRef());
 			return true;
 		}
 	}
@@ -299,10 +300,8 @@ public class Task implements Iterable<Subtask> {
 	public List<Subtask> getRunnableSubtasks() {
 
 		List<Subtask> runnableSubtasks = new ArrayList<Subtask>();
-		Iterator<Subtask> it = graph.iterator();
 
-		while (it.hasNext()) {
-			Subtask st = it.next();
+		for (Subtask st : subtasks.values()) {
 			if (isReady(st)) {
 				runnableSubtasks.add(st);
 			}
@@ -311,17 +310,17 @@ public class Task implements Iterable<Subtask> {
 	}
 
 	protected boolean isReady(Subtask st) {
-		if (!graph.containsVertex(st)) {
+		if (!graph.containsVertex(st.getRef())) {
 			return false;
 		}
-		if (completedSubtasks.contains(st) || issuedSubtasks.contains(st)) {
+		if (completedSubtasks.contains(st.getRef()) || issuedSubtasks.contains(st.getRef())) {
 			return false;
 		}
-		Set<DefaultEdge> edges = graph.incomingEdgesOf(st);
+		Set<DefaultEdge> edges = graph.incomingEdgesOf(st.getRef());
 		boolean allPrecedentComplete = true;
 		for (DefaultEdge e : edges) {
-			Cloudlet src = graph.getEdgeSource(e);
-			if (!completedSubtasks.contains(src)) {
+			Subtask src = subtasks.get(graph.getEdgeSource(e));
+			if (!completedSubtasks.contains(src.getRef())) {
 				allPrecedentComplete = false;
 				break;
 			}
@@ -334,15 +333,11 @@ public class Task implements Iterable<Subtask> {
 	}
 
 	public boolean contains(Subtask v) {
-		return graph.containsVertex(v);
+		return subtasks.containsValue(v);
 	}
 
 	public boolean contains(Cloudlet v) {
-		return graph.containsVertex((Subtask) v);
-	}
-
-	protected List<Subtask> getIssuedSubtask() {
-		return issuedSubtasks;
+		return subtasks.containsValue(v);
 	}
 
 	public static List<Task> XMLImporter(String file) {
@@ -413,7 +408,25 @@ public class Task implements Iterable<Subtask> {
 
 	@Override
 	public Iterator<Subtask> iterator() {
-		return graph.iterator();
+		return new SubtaskIterator(graph.iterator());
+	}
+
+	class SubtaskIterator implements Iterator<Subtask> {
+		final Iterator<Integer> it;
+
+		public SubtaskIterator(Iterator<Integer> _it) {
+			it = _it;
+		}
+
+		@Override
+		public boolean hasNext() {
+			return it.hasNext();
+		}
+
+		@Override
+		public Subtask next() {
+			return subtasks.get(it.next());
+		}
 	}
 
 	public double getArrivalTime() {
@@ -450,5 +463,18 @@ public class Task implements Iterable<Subtask> {
 
 	public void setRef(int _ref) {
 		ref = _ref;
+	}
+
+	public void reset() {
+		completedSubtasks.clear();
+		issuedSubtasks.clear();
+
+		Map<Integer, Subtask> resetedSubtasks = new HashMap<Integer, Subtask>();
+		for (Integer id : subtasks.keySet()) {
+			Subtask st = subtasks.get(id).reset();
+			st.setParent(this);
+			resetedSubtasks.put(id, st);
+		}
+		subtasks = resetedSubtasks;
 	}
 }

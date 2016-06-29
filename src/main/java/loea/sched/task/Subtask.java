@@ -30,31 +30,25 @@ public class Subtask extends Cloudlet {
 	private static final String FILELIST = "fileList";
 
 	private Task parent;
-	private int height=0;
+	private int height = 0;
 	private static int ID_COUNT = 0;
 	private final int ref;
 	private long criticalPathToExit = Long.MIN_VALUE;
 
 	public Subtask(long cloudletLength) {
-		this(Integer.MIN_VALUE, cloudletLength, DEFAULTPESNUMBER,
-				DEFAULTFILESIZE, DEFAULTFILESIZE, DEFAULTUTILIZATIONMODEL,
-				DEFAULTUTILIZATIONMODEL, DEFAULTUTILIZATIONMODEL,
-				DEFAULTRECORD, null);
+		this(Integer.MIN_VALUE, cloudletLength, DEFAULTPESNUMBER, DEFAULTFILESIZE, DEFAULTFILESIZE,
+				DEFAULTUTILIZATIONMODEL, DEFAULTUTILIZATIONMODEL, DEFAULTUTILIZATIONMODEL, DEFAULTRECORD, null);
 	}
 
 	public Subtask() {
 		this(0);
 	}
 
-	Subtask(int _ref, long cloudletLength, int pesNumber,
-			long cloudletFileSize, long cloudletOutputSize,
-			UtilizationModel utilizationModelCpu,
-			UtilizationModel utilizationModelRam,
-			UtilizationModel utilizationModelBw, boolean _record,
-			List<String> _fileList) {
-		super(ID_COUNT++, cloudletLength, pesNumber, cloudletFileSize,
-				cloudletOutputSize, utilizationModelCpu, utilizationModelRam,
-				utilizationModelBw, _record, _fileList);
+	Subtask(int _ref, long cloudletLength, int pesNumber, long cloudletFileSize, long cloudletOutputSize,
+			UtilizationModel utilizationModelCpu, UtilizationModel utilizationModelRam,
+			UtilizationModel utilizationModelBw, boolean _record, List<String> _fileList) {
+		super(ID_COUNT++, cloudletLength, pesNumber, cloudletFileSize, cloudletOutputSize, utilizationModelCpu,
+				utilizationModelRam, utilizationModelBw, _record, _fileList);
 		ref = _ref;
 	}
 
@@ -121,8 +115,7 @@ public class Subtask extends Cloudlet {
 
 		}
 
-		Subtask subtask = new Subtask(refe, leng, pesN, fiSz, opSz, uCPU, uRAM,
-				uBw, recd, fLst);
+		Subtask subtask = new Subtask(refe, leng, pesN, fiSz, opSz, uCPU, uRAM, uBw, recd, fLst);
 
 		return subtask;
 	}
@@ -159,7 +152,7 @@ public class Subtask extends Cloudlet {
 		this.height = height;
 	}
 
-	int getRef() {
+	public int getRef() {
 		return ref;
 	}
 
@@ -169,6 +162,13 @@ public class Subtask extends Cloudlet {
 
 	protected void setCriticalPathToExit(long cplen2exit) {
 		this.criticalPathToExit = cplen2exit;
+	}
+
+	public Subtask reset() {
+
+		return new Subtask(ref, getCloudletLength(), getNumberOfPes(), getCloudletFileSize(), getCloudletOutputSize(),
+				getUtilizationModelCpu(), getUtilizationModelRam(), getUtilizationModelBw(), false, getRequiredFiles());
+
 	}
 
 }
