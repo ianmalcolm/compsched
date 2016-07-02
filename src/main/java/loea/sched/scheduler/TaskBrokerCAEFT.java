@@ -31,7 +31,7 @@ import org.cloudbus.cloudsim.lists.VmList;
  * @author ian
  *
  */
-public class TaskBroker extends DatacenterBroker {
+public class TaskBrokerCAEFT extends DatacenterBroker {
 
 	private final static double SCHEDULING_PERIOD = 1.0;
 
@@ -44,7 +44,7 @@ public class TaskBroker extends DatacenterBroker {
 	
 //	private int vmId = 0;
 
-	public TaskBroker(String name) throws Exception {
+	public TaskBrokerCAEFT(String name) throws Exception {
 		super(name);
 	}
 

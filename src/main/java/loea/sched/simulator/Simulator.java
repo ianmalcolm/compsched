@@ -6,7 +6,7 @@ import java.util.*;
 import java.util.Map.Entry;
 
 import loea.sched.scheduler.SubtaskScheduler;
-import loea.sched.scheduler.TaskBroker;
+import loea.sched.scheduler.TaskBrokerCAEFT;
 import loea.sched.task.Subtask;
 import loea.sched.task.Task;
 
@@ -51,7 +51,7 @@ public class Simulator {
 			Datacenter datacenter0 = createDatacenter("Datacenter_0");
 
 			// Third step: Create Broker
-			TaskBroker broker = createBroker();
+			TaskBrokerCAEFT broker = createBroker();
 			int brokerId = broker.getId();
 
 			// Fourth step: Create one virtual machine
@@ -196,10 +196,10 @@ public class Simulator {
 	 *
 	 * @return the datacenter broker
 	 */
-	private static TaskBroker createBroker() {
-		TaskBroker broker = null;
+	private static TaskBrokerCAEFT createBroker() {
+		TaskBrokerCAEFT broker = null;
 		try {
-			broker = new TaskBroker("Broker"
+			broker = new TaskBrokerCAEFT("Broker"
 					);
 		} catch (Exception e) {
 			e.printStackTrace();

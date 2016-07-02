@@ -5,7 +5,7 @@ import java.util.Date;
 import java.util.List;
 import loea.sched.ProviderImporter;
 import loea.sched.VMImporter;
-import loea.sched.scheduler.TaskBroker;
+import loea.sched.scheduler.TaskBrokerCAEFT;
 import loea.sched.task.Subtask;
 import loea.sched.task.Task;
 
@@ -22,7 +22,7 @@ import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.core.CloudSim;
 
-public class ScalableSimulator {
+public class ScalableSimulatorCAEFT {
 
 	public static void main(String[] args) {
 
@@ -74,7 +74,7 @@ public class ScalableSimulator {
 			@SuppressWarnings("unused")
 			List<Datacenter> centerList = ProviderImporter.XMLImporter(providerFile);
 
-			TaskBroker broker = new TaskBroker("TaskBroker");
+			TaskBrokerCAEFT broker = new TaskBrokerCAEFT("TaskBroker");
 
 			// VM XMLImporter
 			List<Vm> vmList = VMImporter.XMLImporter(VMsFile, broker.getId());
