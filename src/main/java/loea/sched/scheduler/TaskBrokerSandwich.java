@@ -30,7 +30,7 @@ import org.cloudbus.cloudsim.core.SimEvent;
 import org.cloudbus.cloudsim.lists.VmList;
 
 /**
- * @author ian
+ * @author maureen
  *
  */
 public class TaskBrokerSandwich extends DatacenterBroker {
